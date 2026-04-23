@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Kanban from "@/components/Kanban";
 import TopNav from "@/components/TopNav";
+import type { Deal, Stage, User } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +25,9 @@ export default async function HomePage() {
     <main className="min-h-screen">
       <TopNav currentTab="pipeline" />
       <Kanban
-        initialDeals={serialize(deals)}
-        stages={serialize(stages)}
-        users={serialize(users)}
+        initialDeals={serialize(deals) as Deal[]}
+        stages={serialize(stages) as Stage[]}
+        users={serialize(users) as User[]}
       />
     </main>
   );
