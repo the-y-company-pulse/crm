@@ -196,7 +196,7 @@ async function main() {
     else { stage = stagesByName[stageName] ?? stagesByName["Kontakt tagen"]; }
 
     const ownerEmail = OWNER_TO_EMAIL[ownerName];
-    const owner = (ownerEmail && usersByEmail[ownerEmail]) ?? defaultOwner;
+    const owner = (ownerEmail && usersByEmail[ownerEmail]) ?? defaultOwner!;
 
     const valueStr = pick(row, ["Värde", "Value"]);
     const value = Math.round(parseFloat(valueStr.replace(/[^\d.,-]/g, "").replace(",", ".")) || 0);
@@ -219,7 +219,7 @@ async function main() {
         phone: person?.phone || null,
         value,
         stageId: stage.id,
-        ownerId: owner.id,
+        ownerId: owner!.id,
         status: dealStatus,
         source: "pipedrive-import",
         sourceId: pipedriveId || null,
