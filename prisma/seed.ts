@@ -258,7 +258,7 @@ async function main() {
         content,
         occurredAt,
         dealId,
-        userId: defaultOwner.id, // Default to Nicklas (Pipedrive owner field varies)
+        userId: defaultOwner!.id, // Default to Nicklas (Pipedrive owner field varies)
       },
     });
     actImported++;
@@ -285,7 +285,7 @@ async function main() {
         content,
         occurredAt,
         dealId,
-        userId: defaultOwner.id,
+        userId: defaultOwner!.id,
       },
     });
     notesImported++;
