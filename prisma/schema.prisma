@@ -1,0 +1,110 @@
+// Y CRM — Prisma schema
+// To regenerate the client after changes: npx prisma generate
+// To push schema to database: npx prisma db push
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id         String     @id @default(cuid())
+  name       String
+  email      String     @unique
+  color      String     // hex color for owner indicator (e.g. "#deff00")
+  initial    String     // single letter for owner dot (e.g. "N")
+  createdAt  DateTime   @default(now())
+
+  ownedDeals Deal[]     @relation("DealOwner")
+  activities Activity[]
+  targets    Target[]
+
+  @@map("users")
+}
+
+model Stage {
+  id     String @id @default(cuid())
+  name   String
+  order  Int
+  // null status = open pipeline stage. "won" / "lost" = terminal stages.
+  status String?
+
+  deals  Deal[]
+
+  @@unique([order])
+  @@map("stages")
+}
+
+model Deal {
+  id         String     @id @default(cuid())
+  title      String
+  company    String?
+  contact    String?
+  email      String?
+  phone      String?
+  value      Int        @default(0) // value in SEK (no decimals)
+  notes      String?
+  status     String     @default("open") // open | won | lost
+
+  stageId    String
+  stage      Stage      @relation(fields: [stageId], references: [id])
+
+  ownerId    String
+  owner      User       @relation("DealOwner", fields: [ownerId], references: [id])
+
+  // Optional metadata kept from Pipedrive import for reference
+  source     String?    // e.g. "pipedrive-import"
+  sourceId   String?    // original Pipedrive deal ID
+
+  wonAt      DateTime?  // when the deal was marked won
+  lostAt     DateTime?  // when the deal was marked lost
+  expectedCloseDate DateTime? // for forecasting
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  activities Activity[]
+
+  @@index([stageId])
+  @@index([ownerId])
+  @@index([wonAt])
+  @@map("deals")
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  type        String   // note | call | email | meeting
+  content     String   @db.Text
+  occurredAt  DateTime @default(now())
+
+  dealId      String
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([dealId])
+  @@map("activities")
+}
+
+// Sales targets. userId=null means a company-wide target.
+// month=null means a yearly target. month=1-12 means a monthly target.
+model Target {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  year      Int
+  month     Int?     // 1-12, or null for yearly target
+  amount    Int      // SEK
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, year, month])
+  @@index([year])
+  @@map("targets")
+}

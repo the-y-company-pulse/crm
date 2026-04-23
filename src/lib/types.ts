@@ -1,0 +1,84 @@
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  color: string;
+  initial: string;
+};
+
+export type Stage = {
+  id: string;
+  name: string;
+  order: number;
+  status: string | null;
+};
+
+export type Activity = {
+  id: string;
+  type: "note" | "call" | "email" | "meeting";
+  content: string;
+  occurredAt: string;
+  userId: string;
+  user?: User;
+};
+
+export type Deal = {
+  id: string;
+  title: string;
+  company: string | null;
+  contact: string | null;
+  email: string | null;
+  phone: string | null;
+  value: number;
+  notes: string | null;
+  status: string;
+  stageId: string;
+  ownerId: string;
+  owner?: User;
+  activities?: Activity[];
+  wonAt: string | null;
+  lostAt: string | null;
+  expectedCloseDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Target = {
+  id: string;
+  userId: string | null; // null = company-wide
+  user?: User | null;
+  year: number;
+  month: number | null; // null = annual target
+  amount: number;
+};
+
+// Matches the response from GET /api/sales/summary
+export type SalesSummary = {
+  year: number;
+  userId: string | null;
+  yearTotal: number;
+  prevTotal: number;
+  delta: number;
+  deltaPct: number | null;
+  wonCount: number;
+  lostCount: number;
+  hitRate: number;
+  monthlyThis: { value: number; count: number }[]; // length 12
+  monthlyPrev: { value: number; count: number }[];
+  yearlyTarget: number;
+  monthlyTargets: number[]; // length 12
+};
+
+export const ACTIVITY_LABELS: Record<Activity["type"], string> = {
+  note: "Anteckning",
+  call: "Samtal",
+  email: "Mail",
+  meeting: "Möte",
+};
+
+export const ACTIVITY_COLORS: Record<Activity["type"], string> = {
+  note: "#888780",
+  call: "#1D9E75",
+  email: "#378ADD",
+  meeting: "#7F77DD",
+};

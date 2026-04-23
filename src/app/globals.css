@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    height: 100%;
+  }
+  body {
+    font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, var(--font-sans), system-ui, sans-serif;
+    background-color: #080f1a;
+    background-attachment: fixed;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display), "Harabara", system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
+  h2, h3, .font-subheading {
+    font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-weight: 600;
+  }
+  /* Subtle dark scrollbar */
+  ::-webkit-scrollbar { height: 10px; width: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+}
+
+@layer components {
+  /* Glass card surface — used for columns, panels, modals */
+  .glass {
+    @apply bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm;
+  }
+  .glass-strong {
+    @apply bg-white/[0.05] border border-white/[0.12];
+  }
+
+  /* Deal card */
+  .y-card {
+    @apply bg-white/[0.04] border border-white/[0.08] rounded-lg cursor-grab transition-all;
+    border-left-width: 4px;
+  }
+  .y-card:hover { @apply bg-white/[0.07] border-white/[0.18]; }
+  .y-card.is-dragging { @apply opacity-40; }
+  .y-card.is-selected { box-shadow: 0 0 0 2px #deff00; }
+
+  /* Kanban column */
+  .y-col {
+    @apply rounded-xl p-4 min-h-[400px] flex flex-col bg-white/[0.02] border border-white/[0.05];
+  }
+  .y-col.is-over {
+    @apply bg-neon/5 border-neon/40;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 text-base font-medium rounded-lg
+           border border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:border-white/30 transition-all;
+  }
+  .btn-primary {
+    @apply bg-neon border-neon text-ink-950 hover:bg-neon/90 hover:border-neon/90 hover:shadow-neon-glow font-semibold;
+  }
+  .btn-secondary {
+    @apply bg-white/[0.08] border-white/20 text-white/80 hover:bg-white/[0.12] hover:border-white/30 hover:text-white;
+  }
+  .btn-ghost {
+    @apply bg-transparent border-transparent text-white/60 hover:text-white hover:bg-white/[0.04] px-4 py-2;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-4 py-3 text-base rounded-lg bg-white/[0.03] border border-white/[0.10] text-white
+           placeholder:text-white/30
+           focus:outline-none focus:border-neon/60 focus:bg-white/[0.05] transition-colors;
+  }
+
+  /* Owner dot */
+  .owner-dot {
+    @apply inline-flex items-center justify-center rounded-full text-[10px] font-semibold;
+  }
+
+  /* Brand mark — used in the toolbar */
+  .y-brand {
+    @apply rounded-xl bg-neon text-ink-950 flex items-center justify-center font-display font-bold shadow-neon-glow;
+  }
+}
