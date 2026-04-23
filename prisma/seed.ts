@@ -173,7 +173,8 @@ async function main() {
   console.log("  ✓ Cleared");
 
   console.log("\n→ Importing deals…");
-  const defaultOwner = usersByEmail["nicklas@ycompany.se"];
+  const defaultOwner = usersByEmail["nicklas@ycompany.se"]!;
+  if (!defaultOwner) throw new Error("Default owner (nicklas@ycompany.se) not found in users");
   const dealIdMap: Record<string, string> = {}; // Pipedrive ID → our cuid
   let imported = 0, skippedKristian = 0, skippedNoTitle = 0;
 
@@ -196,7 +197,7 @@ async function main() {
     else { stage = stagesByName[stageName] ?? stagesByName["Kontakt tagen"]; }
 
     const ownerEmail = OWNER_TO_EMAIL[ownerName];
-    const owner = (ownerEmail && usersByEmail[ownerEmail]) ?? defaultOwner!;
+    const owner = (ownerEmail && usersByEmail[ownerEmail]) || defaultOwner;
 
     const valueStr = pick(row, ["Värde", "Value"]);
     const value = Math.round(parseFloat(valueStr.replace(/[^\d.,-]/g, "").replace(",", ".")) || 0);
@@ -219,7 +220,7 @@ async function main() {
         phone: person?.phone || null,
         value,
         stageId: stage.id,
-        ownerId: owner!.id,
+        ownerId: owner.id,
         status: dealStatus,
         source: "pipedrive-import",
         sourceId: pipedriveId || null,
@@ -258,7 +259,7 @@ async function main() {
         content,
         occurredAt,
         dealId,
-        userId: defaultOwner!.id, // Default to Nicklas (Pipedrive owner field varies)
+        userId: defaultOwner.id, // Default to Nicklas (Pipedrive owner field varies)
       },
     });
     actImported++;
@@ -285,7 +286,7 @@ async function main() {
         content,
         occurredAt,
         dealId,
-        userId: defaultOwner!.id,
+        userId: defaultOwner.id,
       },
     });
     notesImported++;
