@@ -251,7 +251,7 @@ async function main() {
     if (!content) { actSkipped++; continue; }
 
     const occurredAtStr = pick(row, ["Markerad som färdig klockan", "Klart senast den", "Lagts till kl."]);
-    const occurredAt = parseSwedishDate(occurredAtStr);
+    const occurredAt = parseSwedishDate(occurredAtStr) || new Date();
 
     await prisma.activity.create({
       data: {
@@ -278,7 +278,7 @@ async function main() {
     const content = stripHtml(pick(row, ["Innehåll", "Content"]));
     if (!content) { notesSkipped++; continue; }
 
-    const occurredAt = parseSwedishDate(pick(row, ["Lagts till kl.", "Added"]));
+    const occurredAt = parseSwedishDate(pick(row, ["Lagts till kl.", "Added"])) || new Date();
 
     await prisma.activity.create({
       data: {
