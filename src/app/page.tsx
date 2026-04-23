@@ -25,9 +25,9 @@ export default async function HomePage() {
     <main className="min-h-screen">
       <TopNav currentTab="pipeline" />
       <Kanban
-        initialDeals={serialize(deals) as Deal[]}
-        stages={serialize(stages) as Stage[]}
-        users={serialize(users) as User[]}
+        initialDeals={serialize(deals) as unknown as Deal[]}
+        stages={serialize(stages) as unknown as Stage[]}
+        users={serialize(users) as unknown as User[]}
       />
     </main>
   );
