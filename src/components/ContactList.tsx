@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/useMediaQuery"
+import NewContactModal from "./NewContactModal"
 
 type Contact = {
   id: string
@@ -25,8 +27,10 @@ type Contact = {
 
 export default function ContactList({ contacts: initialContacts }: { contacts: Contact[] }) {
   const isMobile = useIsMobile()
-  const [contacts] = useState(initialContacts)
+  const router = useRouter()
+  const [contacts, setContacts] = useState(initialContacts)
   const [search, setSearch] = useState("")
+  const [showNewModal, setShowNewModal] = useState(false)
 
   const filtered = contacts.filter((c) =>
     c.fullName.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,6 +42,22 @@ export default function ContactList({ contacts: initialContacts }: { contacts: C
 
   const totalDeals = contacts.reduce((sum, c) => sum + c._count.deals, 0)
   const withCompany = contacts.filter((c) => c.company).length
+
+  async function handleCreate(data: any) {
+    const res = await fetch("/api/contacts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...data,
+        fullName: `${data.firstName} ${data.lastName}`,
+      }),
+    })
+    if (!res.ok) return
+    const created = await res.json()
+    setContacts([created, ...contacts])
+    setShowNewModal(false)
+    router.refresh()
+  }
 
   // Mobile card view
   if (isMobile) {
@@ -134,6 +154,20 @@ export default function ContactList({ contacts: initialContacts }: { contacts: C
             ))}
           </div>
         )}
+
+        {showNewModal && (
+          <NewContactModal
+            onClose={() => setShowNewModal(false)}
+            onCreate={handleCreate}
+          />
+        )}
+
+        {/* FAB */}
+        <button onClick={() => setShowNewModal(true)} className="fab">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
       </div>
     )
   }
@@ -148,22 +182,30 @@ export default function ContactList({ contacts: initialContacts }: { contacts: C
             {contacts.length} kontakter · {withCompany} med företag · {totalDeals} deals
           </div>
         </div>
-        <div className="relative">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Sök kontakter..."
-            className="input w-80"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-            >
-              ×
-            </button>
-          )}
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Sök kontakter..."
+              className="input w-80"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Ny kontakt
+          </button>
         </div>
       </div>
 
@@ -263,6 +305,13 @@ export default function ContactList({ contacts: initialContacts }: { contacts: C
           </tbody>
         </table>
       </div>
+
+      {showNewModal && (
+        <NewContactModal
+          onClose={() => setShowNewModal(false)}
+          onCreate={handleCreate}
+        />
+      )}
     </div>
   )
 }

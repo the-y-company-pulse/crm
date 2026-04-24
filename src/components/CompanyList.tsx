@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/useMediaQuery"
+import NewCompanyModal from "./NewCompanyModal"
 
 type Company = {
   id: string
@@ -19,8 +21,10 @@ type Company = {
 
 export default function CompanyList({ companies: initialCompanies }: { companies: Company[] }) {
   const isMobile = useIsMobile()
-  const [companies] = useState(initialCompanies)
+  const router = useRouter()
+  const [companies, setCompanies] = useState(initialCompanies)
   const [search, setSearch] = useState("")
+  const [showNewModal, setShowNewModal] = useState(false)
 
   const filtered = companies.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -30,6 +34,19 @@ export default function CompanyList({ companies: initialCompanies }: { companies
 
   const totalDeals = companies.reduce((sum, c) => sum + c._count.deals, 0)
   const totalContacts = companies.reduce((sum, c) => sum + c._count.contacts, 0)
+
+  async function handleCreate(data: any) {
+    const res = await fetch("/api/companies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) return
+    const created = await res.json()
+    setCompanies([created, ...companies])
+    setShowNewModal(false)
+    router.refresh()
+  }
 
   // Mobile card view
   if (isMobile) {
@@ -107,6 +124,20 @@ export default function CompanyList({ companies: initialCompanies }: { companies
             ))}
           </div>
         )}
+
+        {showNewModal && (
+          <NewCompanyModal
+            onClose={() => setShowNewModal(false)}
+            onCreate={handleCreate}
+          />
+        )}
+
+        {/* FAB */}
+        <button onClick={() => setShowNewModal(true)} className="fab">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
       </div>
     )
   }
@@ -121,22 +152,30 @@ export default function CompanyList({ companies: initialCompanies }: { companies
             {companies.length} företag · {totalDeals} deals · {totalContacts} kontakter
           </div>
         </div>
-        <div className="relative">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Sök företag..."
-            className="input w-80"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-            >
-              ×
-            </button>
-          )}
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Sök företag..."
+              className="input w-80"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nytt företag
+          </button>
         </div>
       </div>
 
@@ -205,6 +244,13 @@ export default function CompanyList({ companies: initialCompanies }: { companies
           </tbody>
         </table>
       </div>
+
+      {showNewModal && (
+        <NewCompanyModal
+          onClose={() => setShowNewModal(false)}
+          onCreate={handleCreate}
+        />
+      )}
     </div>
   )
 }
