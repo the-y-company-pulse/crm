@@ -69,11 +69,17 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
           <div className="flex-1 min-w-0">
             <h2 className="font-display text-2xl text-white leading-tight">{deal.title}</h2>
             <p className="text-base text-white/50 mt-2">
-              {[deal.company, deal.contact].filter(Boolean).join(" · ")}
+              {[
+                (deal as any).company_rel?.name || deal.company,
+                (deal as any).contact_rel?.fullName || deal.contact
+              ].filter(Boolean).join(" · ")}
             </p>
-            {(deal.email || deal.phone) && (
+            {((deal as any).contact_rel?.email || (deal as any).contact_rel?.phone || deal.email || deal.phone) && (
               <p className="text-sm text-white/35 mt-1.5">
-                {[deal.email, deal.phone].filter(Boolean).join(" · ")}
+                {[
+                  (deal as any).contact_rel?.email || deal.email,
+                  (deal as any).contact_rel?.phone || deal.phone
+                ].filter(Boolean).join(" · ")}
               </p>
             )}
             <p className="text-xl font-medium text-neon mt-4">{fmt(deal.value)}</p>

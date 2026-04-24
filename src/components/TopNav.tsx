@@ -3,7 +3,7 @@ import { auth } from "../../auth";
 import LogoutButton from "./LogoutButton";
 
 type Props = {
-  currentTab: "pipeline" | "statistik";
+  currentTab: "pipeline" | "statistik" | "foretag" | "kontakter";
 };
 
 export default async function TopNav({ currentTab }: Props) {
@@ -39,6 +39,26 @@ export default async function TopNav({ currentTab }: Props) {
           }`}
         >
           Statistik
+        </Link>
+        <Link
+          href="/foretag"
+          className={`px-5 py-2.5 text-sm font-medium rounded-md transition-colors ${
+            currentTab === "foretag"
+              ? "bg-white/[0.10] text-white"
+              : "text-white/50 hover:text-white/80"
+          }`}
+        >
+          Företag
+        </Link>
+        <Link
+          href="/kontakter"
+          className={`px-5 py-2.5 text-sm font-medium rounded-md transition-colors ${
+            currentTab === "kontakter"
+              ? "bg-white/[0.10] text-white"
+              : "text-white/50 hover:text-white/80"
+          }`}
+        >
+          Kontakter
         </Link>
         {isAdmin && (
           <Link

@@ -35,6 +35,7 @@ export default function ContactAutocomplete({
   const [loading, setLoading] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+  const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   // Fetch contact name if value is set
@@ -97,8 +98,21 @@ export default function ContactAutocomplete({
   }
 
   function handleCreateNew() {
+    // If there are similar results, show warning
+    if (results.length > 0) {
+      setShowDuplicateWarning(true)
+      return
+    }
+
+    // Otherwise create directly
     onChange(null, query)
     setShowDropdown(false)
+  }
+
+  function handleConfirmCreate() {
+    onChange(null, query)
+    setShowDropdown(false)
+    setShowDuplicateWarning(false)
   }
 
   function handleClear() {
@@ -181,6 +195,60 @@ export default function ContactAutocomplete({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {showDuplicateWarning && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+          <div className="bg-ink-900 border border-white/[0.12] rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-start gap-3 mb-4">
+              <svg className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <h3 className="font-display text-lg text-white mb-1">Liknande kontakter hittades</h3>
+                <p className="text-white/60 text-sm">
+                  Det finns {results.length} befintliga kontakter som liknar "{query}". Vill du verkligen skapa en ny?
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
+              {results.slice(0, 3).map((contact) => (
+                <button
+                  key={contact.id}
+                  type="button"
+                  onClick={() => {
+                    handleSelect(contact)
+                    setShowDuplicateWarning(false)
+                  }}
+                  className="w-full text-left p-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] transition-colors"
+                >
+                  <div className="text-white font-medium text-sm">{contact.fullName}</div>
+                  <div className="text-white/40 text-xs mt-1">
+                    {contact.company?.name && `${contact.company.name} • `}
+                    {contact.email || contact.phone || ""}
+                    {contact._count.deals > 0 && ` • ${contact._count.deals} deals`}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDuplicateWarning(false)}
+                className="btn-secondary flex-1"
+              >
+                Avbryt
+              </button>
+              <button
+                onClick={handleConfirmCreate}
+                className="btn-primary flex-1"
+              >
+                Skapa ny ändå
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

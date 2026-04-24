@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Deal, User } from "@/lib/types";
+import CompanyAutocomplete from "./CompanyAutocomplete";
+import ContactAutocomplete from "./ContactAutocomplete";
 
 type Props = {
   deal: Deal;
@@ -12,10 +14,10 @@ type Props = {
 
 export default function EditDealModal({ deal, users, onClose, onSaved }: Props) {
   const [title, setTitle] = useState(deal.title);
-  const [company, setCompany] = useState(deal.company ?? "");
-  const [contact, setContact] = useState(deal.contact ?? "");
-  const [email, setEmail] = useState(deal.email ?? "");
-  const [phone, setPhone] = useState(deal.phone ?? "");
+  const [companyId, setCompanyId] = useState<string | null>((deal as any).companyId ?? null);
+  const [companyName, setCompanyName] = useState<string | null>(deal.company ?? null);
+  const [contactId, setContactId] = useState<string | null>((deal as any).contactId ?? null);
+  const [contactName, setContactName] = useState<string | null>(deal.contact ?? null);
   const [value, setValue] = useState(deal.value.toString());
   const [ownerId, setOwnerId] = useState(deal.ownerId);
   const [saving, setSaving] = useState(false);
@@ -29,10 +31,10 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
-          company: company.trim() || null,
-          contact: contact.trim() || null,
-          email: email.trim() || null,
-          phone: phone.trim() || null,
+          companyId,
+          company: companyName,
+          contactId,
+          contact: contactName,
           value: parseInt(value.replace(/\s/g, ""), 10) || 0,
           ownerId,
         }),
@@ -86,12 +88,13 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
               <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
                 Företag
               </label>
-              <input
-                type="text"
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                placeholder="T.ex. Volvo AB"
-                className="input w-full"
+              <CompanyAutocomplete
+                value={companyId}
+                onChange={(id, name) => {
+                  setCompanyId(id);
+                  setCompanyName(name);
+                }}
+                placeholder="Sök eller skapa företag..."
               />
             </div>
 
@@ -99,40 +102,14 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
               <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
                 Kontaktperson
               </label>
-              <input
-                type="text"
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                placeholder="T.ex. Anna Svensson"
-                className="input w-full"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
-                E-post
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="anna@volvo.se"
-                className="input w-full"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
-                Telefon
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="070-123 45 67"
-                className="input w-full"
+              <ContactAutocomplete
+                value={contactId}
+                onChange={(id, name) => {
+                  setContactId(id);
+                  setContactName(name);
+                }}
+                companyId={companyId}
+                placeholder="Sök eller skapa kontakt..."
               />
             </div>
           </div>
@@ -159,7 +136,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
 
             <div>
               <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
-                Ansvarig partner
+                Ansvarig
               </label>
               <select
                 value={ownerId}

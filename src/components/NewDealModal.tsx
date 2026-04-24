@@ -99,7 +99,7 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
                 </select>
               </Field>
             </div>
-            <Field label="Stadium">
+            <Field label="Fas">
               <select className="input" value={stageId} onChange={(e) => setStageId(e.target.value)}>
                 {openStages.map((s) => (
                   <option key={s.id} value={s.id} className="bg-ink-900">{s.name}</option>
