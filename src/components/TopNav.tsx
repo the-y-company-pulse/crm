@@ -6,7 +6,7 @@ import LogoutButton from "./LogoutButton";
 import MobileNav from "./MobileNav";
 
 type Props = {
-  currentTab: "pipeline" | "statistik" | "foretag" | "kontakter";
+  currentTab: "pipeline" | "statistik" | "foretag" | "kontakter" | "projekt";
   isAdmin?: boolean;
 };
 
@@ -72,6 +72,16 @@ export default function TopNav({ currentTab, isAdmin }: Props) {
             }`}
           >
             Kontakter
+          </Link>
+          <Link
+            href="/projekt"
+            className={`px-5 py-2.5 text-sm font-medium rounded-md transition-colors ${
+              currentTab === "projekt"
+                ? "bg-white/[0.10] text-white"
+                : "text-white/50 hover:text-white/80"
+            }`}
+          >
+            Projekt
           </Link>
           {isAdmin && (
             <Link

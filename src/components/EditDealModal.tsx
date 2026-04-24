@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Deal, User } from "@/lib/types";
 import CompanyAutocomplete from "./CompanyAutocomplete";
 import ContactAutocomplete from "./ContactAutocomplete";
+import ProjectAutocomplete from "./ProjectAutocomplete";
 
 type Props = {
   deal: Deal;
@@ -20,6 +21,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
   const [contactName, setContactName] = useState<string | null>(deal.contact ?? null);
   const [value, setValue] = useState(deal.value.toString());
   const [ownerId, setOwnerId] = useState(deal.ownerId);
+  const [projectId, setProjectId] = useState<string | null>(deal.projectId ?? null);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -37,6 +39,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
           contact: contactName,
           value: parseInt(value.replace(/\s/g, ""), 10) || 0,
           ownerId,
+          projectId,
         }),
       });
       if (!res.ok) throw new Error("Failed to update");
@@ -150,6 +153,17 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
+              Projekt (valfritt)
+            </label>
+            <ProjectAutocomplete
+              value={projectId}
+              onChange={(id) => setProjectId(id)}
+              placeholder="Sök projekt..."
+            />
           </div>
         </div>
 

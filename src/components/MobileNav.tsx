@@ -60,6 +60,18 @@ export default function MobileNav({ currentTab, isAdmin, onClose }: Props) {
           </Link>
 
           <Link
+            href="/projekt"
+            onClick={onClose}
+            className={`px-5 py-3 text-lg font-medium rounded-md transition-colors ${
+              isActive("projekt")
+                ? "bg-neon text-ink-950"
+                : "text-white/70 hover:text-white hover:bg-white/[0.05]"
+            }`}
+          >
+            Projekt
+          </Link>
+
+          <Link
             href="/statistik"
             onClick={onClose}
             className={`px-5 py-3 text-lg font-medium rounded-md transition-colors ${

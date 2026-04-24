@@ -83,6 +83,7 @@ model Contact {
   company     Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   deals       Deal[]
+  participants  Participant[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -127,6 +128,9 @@ model Deal {
   lostAt     DateTime?  // when the deal was marked lost
   expectedCloseDate DateTime? // for forecasting
 
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
@@ -137,6 +141,7 @@ model Deal {
   @@index([wonAt])
   @@index([companyId])
   @@index([contactId])
+  @@index([projectId])
   @@map("deals")
 }
 
@@ -211,4 +216,43 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model Project {
+  id                  String   @id @default(cuid())
+  name                String
+  startDate           DateTime
+  format              String?  @db.Text
+  maxParticipants     Int
+  pricePerParticipant Int
+  status              String   @default("planned")
+  notes               String?  @db.Text
+
+  deals               Deal[]
+  participants        Participant[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([status])
+  @@index([startDate])
+  @@map("projects")
+}
+
+model Participant {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  status    String   @default("confirmed")
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, contactId])
+  @@index([projectId])
+  @@index([contactId])
+  @@index([status])
+  @@map("participants")
 }

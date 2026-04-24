@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Stage, User } from "@/lib/types";
 import CompanyAutocomplete from "./CompanyAutocomplete";
 import ContactAutocomplete from "./ContactAutocomplete";
+import ProjectAutocomplete from "./ProjectAutocomplete";
 
 type Props = {
   stages: Stage[];
@@ -19,6 +20,7 @@ type Props = {
     value: number;
     stageId: string;
     ownerId: string;
+    projectId?: string | null;
   }) => void | Promise<void>;
 };
 
@@ -32,6 +34,7 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
   const [value, setValue] = useState("");
   const [stageId, setStageId] = useState(openStages[0]?.id ?? stages[0]?.id ?? "");
   const [ownerId, setOwnerId] = useState(currentUserId);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
@@ -47,6 +50,7 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
         value: parseInt(value.replace(/\D/g, ""), 10) || 0,
         stageId,
         ownerId,
+        projectId,
       });
     } finally {
       setSubmitting(false);
@@ -111,6 +115,13 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
                   <option key={s.id} value={s.id} className="bg-ink-900">{s.name}</option>
                 ))}
               </select>
+            </Field>
+            <Field label="Projekt (valfritt)">
+              <ProjectAutocomplete
+                value={projectId}
+                onChange={(id) => setProjectId(id)}
+                placeholder="Sök projekt..."
+              />
             </Field>
           </div>
           <div className="flex flex-col md:flex-row justify-end gap-2 md:gap-3 mt-6">

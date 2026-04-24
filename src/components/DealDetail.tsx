@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Deal, User, Activity } from "@/lib/types";
-import { ACTIVITY_LABELS, ACTIVITY_COLORS } from "@/lib/types";
+import { ACTIVITY_LABELS, ACTIVITY_COLORS, PROJECT_STATUS_LABELS } from "@/lib/types";
 import EditDealModal from "./EditDealModal";
 
 type Props = {
@@ -135,6 +136,21 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
               </p>
             )}
             <p className="text-lg md:text-xl font-medium text-neon mt-2 md:mt-4">{fmt(deal.value)}</p>
+
+            {deal.project && (
+              <div className="mt-4 p-3 rounded-lg bg-white/[0.03] border border-white/[0.08]">
+                <div className="text-xs text-white/40 mb-1">Kopplat projekt</div>
+                <Link
+                  href={`/projekt/${deal.project.id}`}
+                  className="text-white font-medium hover:text-neon transition"
+                >
+                  {deal.project.name}
+                </Link>
+                <div className="text-xs text-white/40 mt-1">
+                  {new Date(deal.project.startDate).toLocaleDateString("sv-SE")} · {PROJECT_STATUS_LABELS[deal.project.status as keyof typeof PROJECT_STATUS_LABELS]}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Close button and owner - right side on desktop, top on mobile */}

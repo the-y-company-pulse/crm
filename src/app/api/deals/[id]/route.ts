@@ -18,6 +18,7 @@ const UpdateDealSchema = z.object({
   stageId: z.string().min(1).optional(),
   ownerId: z.string().min(1).optional(),
   status: z.enum(["open", "won", "lost"]).optional(),
+  projectId: z.string().nullable().optional(),
 });
 
 export async function PATCH(
@@ -97,6 +98,9 @@ export async function PATCH(
   if (parsed.data.contact !== undefined) updateData.contact = parsed.data.contact;
   if (parsed.data.email !== undefined) updateData.email = parsed.data.email;
   if (parsed.data.phone !== undefined) updateData.phone = parsed.data.phone;
+
+  // Handle project
+  if (parsed.data.projectId !== undefined) updateData.projectId = parsed.data.projectId;
 
   // If stageId is being updated, check if it's a terminal stage
   if (parsed.data.stageId) {

@@ -36,6 +36,7 @@ const CreateDealSchema = z.object({
   value: z.number().int().nonnegative().default(0),
   stageId: z.string().min(1),
   ownerId: z.string().min(1),
+  projectId: z.string().optional().nullable(),
 });
 
 export async function POST(req: NextRequest) {
@@ -99,6 +100,11 @@ export async function POST(req: NextRequest) {
   dealData.contact = parsed.data.contact;
   dealData.email = parsed.data.email;
   dealData.phone = parsed.data.phone;
+
+  // Add project if provided
+  if (parsed.data.projectId) {
+    dealData.projectId = parsed.data.projectId;
+  }
 
   const deal = await prisma.deal.create({
     data: dealData,
