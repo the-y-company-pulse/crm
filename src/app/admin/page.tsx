@@ -25,7 +25,7 @@ export default async function AdminPage() {
 
   return (
     <main className="min-h-screen">
-      <TopNav currentTab="pipeline" />
+      <TopNav currentTab="pipeline" isAdmin={true} />
       <AdminDashboard
         users={JSON.parse(JSON.stringify(users))}
         currentUserId={session.user.id}

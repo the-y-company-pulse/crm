@@ -41,7 +41,7 @@ export default async function ContactDetailPage({
 
   return (
     <main className="min-h-screen">
-      <TopNav currentTab="kontakter" />
+      <TopNav currentTab="kontakter" isAdmin={session.user.role === "admin"} />
       <ContactDetail
         contact={JSON.parse(JSON.stringify(contact))}
         companies={JSON.parse(JSON.stringify(companies))}

@@ -28,7 +28,7 @@ export default async function CompaniesPage() {
 
   return (
     <main className="min-h-screen">
-      <TopNav currentTab="foretag" />
+      <TopNav currentTab="foretag" isAdmin={session.user.role === "admin"} />
       <CompanyList companies={JSON.parse(JSON.stringify(companies))} />
     </main>
   )

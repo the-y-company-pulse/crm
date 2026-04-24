@@ -17,6 +17,9 @@ import DealCard from "./DealCard";
 import DealDetail from "./DealDetail";
 import Toolbar from "./Toolbar";
 import NewDealModal from "./NewDealModal";
+import { useIsMobile } from "@/hooks/useMediaQuery";
+import MobileStageSelector from "./MobileStageSelector";
+import MobileDealCard from "./MobileDealCard";
 
 type Props = {
   initialDeals: Deal[];
@@ -26,6 +29,7 @@ type Props = {
 };
 
 export default function Kanban({ initialDeals, stages, users, currentUserId }: Props) {
+  const isMobile = useIsMobile();
   const [deals, setDeals] = useState<Deal[]>(initialDeals);
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
@@ -33,6 +37,16 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
   const [ownerFilter, setOwnerFilter] = useState<string | "all">("all");
   const [showLost, setShowLost] = useState(false);
   const [showWon, setShowWon] = useState(false);
+
+  // State för mobil single-column view
+  const visibleStages = stages.filter((s) => {
+    if (!showLost && s.status === "lost") return false;
+    if (!showWon && s.status === "won") return false;
+    return true;
+  });
+  const [selectedMobileStage, setSelectedMobileStage] = useState<string>(
+    visibleStages[0]?.id || stages[0]?.id || ""
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -110,16 +124,106 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
     setShowNewDeal(false);
   }
 
+  // Handle move for mobile cards
+  async function handleMoveDeal(dealId: string, newStageId: string) {
+    const deal = deals.find((d) => d.id === dealId);
+    if (!deal || deal.stageId === newStageId) return;
+
+    // Optimistic update
+    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stageId: newStageId } : d)));
+    try {
+      await fetch(`/api/deals/${dealId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stageId: newStageId }),
+      });
+    } catch {
+      // Revert on failure
+      setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stageId: deal.stageId } : d)));
+    }
+  }
+
   const visibleDeals = ownerFilter === "all" ? deals : deals.filter((d) => d.ownerId === ownerFilter);
   const selectedDeal = deals.find((d) => d.id === selectedDealId) ?? null;
-  let visibleStages = stages;
-  if (!showLost) visibleStages = visibleStages.filter((s) => s.status !== "lost");
-  if (!showWon) visibleStages = visibleStages.filter((s) => s.status !== "won");
 
   // Only count deals in visible stages for pipeline metrics
   const visibleStageIds = new Set(visibleStages.map((s) => s.id));
   const pipelineDeals = visibleDeals.filter((d) => visibleStageIds.has(d.stageId));
 
+  // Mobile view
+  if (isMobile) {
+    const dealsInStage = visibleDeals.filter((d) => d.stageId === selectedMobileStage);
+    // Attach stage info to each stage for the selector
+    const stagesWithCounts = visibleStages.map(stage => ({
+      ...stage,
+      deals: visibleDeals.filter(d => d.stageId === stage.id)
+    }));
+
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Toolbar
+          users={users}
+          ownerFilter={ownerFilter}
+          onOwnerFilterChange={setOwnerFilter}
+          onNewDeal={() => setShowNewDeal(true)}
+          dealCount={pipelineDeals.length}
+          totalValue={pipelineDeals.reduce((sum, d) => sum + d.value, 0)}
+          showLost={showLost}
+          onToggleLost={() => setShowLost(!showLost)}
+          showWon={showWon}
+          onToggleWon={() => setShowWon(!showWon)}
+        />
+
+        <MobileStageSelector
+          stages={stagesWithCounts}
+          selectedStageId={selectedMobileStage}
+          onChange={setSelectedMobileStage}
+        />
+
+        {/* Single column of cards */}
+        <div className="flex-1 px-4 py-4 flex flex-col gap-3 overflow-y-auto">
+          {dealsInStage.length === 0 ? (
+            <p className="text-white/40 text-center py-12 text-sm">
+              Inga affärer i denna fas
+            </p>
+          ) : (
+            dealsInStage.map((deal) => (
+              <MobileDealCard
+                key={deal.id}
+                deal={deal}
+                onOpen={() => setSelectedDealId(deal.id)}
+                onMove={handleMoveDeal}
+                stages={visibleStages}
+              />
+            ))
+          )}
+        </div>
+
+        {selectedDeal && (
+          <DealDetail
+            deal={selectedDeal}
+            users={users}
+            currentUserId={currentUserId}
+            onClose={() => setSelectedDealId(null)}
+            onAddActivity={(type, content) => handleAddActivity(selectedDeal.id, type, content)}
+            onDealUpdate={handleDealUpdate}
+          />
+        )}
+
+        {showNewDeal && (
+          <NewDealModal
+            stages={stages}
+            users={users}
+            currentUserId={currentUserId}
+            onClose={() => setShowNewDeal(false)}
+            onCreate={handleCreateDeal}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Desktop view (original kanban board)
   return (
     <div className="flex flex-col min-h-screen">
       <Toolbar
@@ -141,8 +245,8 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        <div className="flex-1 overflow-x-auto px-8 pb-8">
-          <div className="flex gap-4 h-full" style={{ minWidth: `${visibleStages.length * 280}px` }}>
+        <div className="flex-1 overflow-x-auto px-4 md:px-8 pb-8">
+          <div className="flex gap-3 md:gap-4 h-full" style={{ minWidth: `${visibleStages.length * 280}px` }}>
             {visibleStages.map((stage) => {
               const stageDeals = visibleDeals.filter((d) => d.stageId === stage.id);
               return (

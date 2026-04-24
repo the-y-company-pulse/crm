@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useIsMobile } from "@/hooks/useMediaQuery"
 
 type Contact = {
   id: string
@@ -23,6 +24,7 @@ type Contact = {
 }
 
 export default function ContactList({ contacts: initialContacts }: { contacts: Contact[] }) {
+  const isMobile = useIsMobile()
   const [contacts] = useState(initialContacts)
   const [search, setSearch] = useState("")
 
@@ -37,6 +39,106 @@ export default function ContactList({ contacts: initialContacts }: { contacts: C
   const totalDeals = contacts.reduce((sum, c) => sum + c._count.deals, 0)
   const withCompany = contacts.filter((c) => c.company).length
 
+  // Mobile card view
+  if (isMobile) {
+    return (
+      <div className="px-4 py-4">
+        <div className="mb-4">
+          <h1 className="font-display text-2xl text-white mb-2">Kontakter</h1>
+          <div className="text-white/40 text-xs">
+            {contacts.length} kontakter · {withCompany} med företag · {totalDeals} deals
+          </div>
+        </div>
+
+        <div className="relative mb-4">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Sök kontakter..."
+            className="input w-full"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-2xl"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {filtered.length === 0 ? (
+          <p className="text-white/40 text-center py-12 text-sm">
+            {search ? "Inga kontakter hittades" : "Inga kontakter ännu"}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {filtered.map((contact) => (
+              <Link
+                key={contact.id}
+                href={`/kontakter/${contact.id}`}
+                className="bg-navy/80 border border-white/[0.15] rounded-lg p-4 touch-target transition-all hover:bg-navy active:bg-navy/90"
+              >
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-medium text-white mb-1">{contact.fullName}</h3>
+                    {contact.title && (
+                      <p className="text-xs text-white/40 mb-1">{contact.title}</p>
+                    )}
+                    {contact.company && (
+                      <p className="text-sm text-white/60">{contact.company.name}</p>
+                    )}
+                  </div>
+                  {contact.linkedin && (
+                    <a
+                      href={contact.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/40 hover:text-white text-sm flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                      title="LinkedIn"
+                    >
+                      in
+                    </a>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1 text-xs text-white/50">
+                  {contact.email && (
+                    <a
+                      href={`mailto:${contact.email}`}
+                      className="hover:text-neon transition-colors truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {contact.email}
+                    </a>
+                  )}
+                  {contact.phone && (
+                    <a
+                      href={`tel:${contact.phone}`}
+                      className="hover:text-neon transition-colors font-mono"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {contact.phone}
+                    </a>
+                  )}
+                </div>
+
+                {contact._count.deals > 0 && (
+                  <div className="mt-3 pt-3 border-t border-white/[0.08] text-xs text-white/40">
+                    {contact._count.deals} deal{contact._count.deals !== 1 ? 's' : ''}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Desktop table view
   return (
     <div className="px-8 py-8">
       <div className="flex items-center justify-between mb-8">

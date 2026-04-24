@@ -26,9 +26,11 @@ export default async function HomePage() {
   // Serialize Date → string for client component
   const serialize = <T,>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
+  const isAdmin = session.user.role === "admin";
+
   return (
     <main className="min-h-screen">
-      <TopNav currentTab="pipeline" />
+      <TopNav currentTab="pipeline" isAdmin={isAdmin} />
       <Kanban
         initialDeals={serialize(deals) as unknown as Deal[]}
         stages={serialize(stages) as unknown as Stage[]}

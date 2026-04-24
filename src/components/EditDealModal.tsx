@@ -55,20 +55,20 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-navy-800 border border-white/[0.12] rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-xl text-white">Redigera affär</h2>
+    <div className="fixed inset-0 bg-ink-950/90 md:bg-black/60 flex items-center justify-center z-50 p-0 md:p-4">
+      <div className="bg-navy-800 border-0 md:border md:border-white/[0.12] rounded-none md:rounded-2xl max-w-lg w-full h-full md:h-auto p-4 md:p-6 shadow-2xl overflow-y-auto">
+        <div className="flex items-center justify-between mb-4 md:mb-5">
+          <h2 className="font-display text-lg md:text-xl text-white">Redigera affär</h2>
           <button
             onClick={onClose}
-            className="text-white/40 hover:text-white/80 transition text-2xl leading-none"
+            className="text-white/40 hover:text-white/80 transition text-3xl leading-none"
             aria-label="Stäng"
           >
             ×
           </button>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 md:gap-4">
           <div>
             <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
               Titel *
@@ -83,7 +83,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
                 Företag
@@ -114,7 +114,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
                 Värde
@@ -153,8 +153,8 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
           </div>
         </div>
 
-        <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="btn-secondary flex-1 flex items-center justify-center gap-2" disabled={saving}>
+        <div className="flex flex-col md:flex-row gap-2 md:gap-3 mt-6">
+          <button onClick={onClose} className="btn-secondary touch-target flex-1 flex items-center justify-center gap-2" disabled={saving}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -162,7 +162,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
           </button>
           <button
             onClick={handleSave}
-            className="btn-primary flex-1 flex items-center justify-center gap-2"
+            className="btn-primary touch-target flex-1 flex items-center justify-center gap-2"
             disabled={!title.trim() || saving}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

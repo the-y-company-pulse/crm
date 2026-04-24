@@ -1,12 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import StatistikDashboard from "@/components/StatistikDashboard";
 import TopNav from "@/components/TopNav";
+import { auth } from "../../../auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{ year?: string; userId?: string }>;
 
 export default async function StatistikPage({ searchParams }: { searchParams: SearchParams }) {
+  const session = await auth();
+  if (!session) redirect("/login");
+
   const params = await searchParams;
   const year = parseInt(params.year ?? String(new Date().getFullYear()), 10);
   const userId = params.userId ?? "all";
@@ -24,9 +29,11 @@ export default async function StatistikPage({ searchParams }: { searchParams: Se
     }))
   );
 
+  const isAdmin = session.user.role === "admin";
+
   return (
     <main className="min-h-screen">
-      <TopNav currentTab="statistik" />
+      <TopNav currentTab="statistik" isAdmin={isAdmin} />
       <StatistikDashboard
         year={year}
         userId={userId}

@@ -36,7 +36,7 @@ export default async function ContactsPage() {
 
   return (
     <main className="min-h-screen">
-      <TopNav currentTab="kontakter" />
+      <TopNav currentTab="kontakter" isAdmin={session.user.role === "admin"} />
       <ContactList contacts={JSON.parse(JSON.stringify(contacts))} />
     </main>
   )

@@ -88,4 +88,42 @@
   .y-brand {
     @apply rounded-xl bg-neon text-ink-950 flex items-center justify-center font-display font-bold shadow-neon-glow;
   }
+
+  /* Mobile Responsive Utilities */
+
+  /* Floating Action Button */
+  .fab {
+    @apply fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full
+           bg-neon text-ink-950 shadow-neon-glow
+           flex items-center justify-center
+           hover:scale-110 active:scale-95 transition-transform;
+  }
+
+  /* Hamburger menu */
+  .hamburger-line {
+    @apply w-6 h-0.5 bg-white/80 transition-all;
+  }
+
+  /* Mobile nav overlay */
+  .mobile-nav-overlay {
+    @apply fixed inset-0 bg-ink-950/95 backdrop-blur-lg z-50
+           flex flex-col p-6;
+    animation: slideInFromRight 0.3s ease-out;
+  }
+
+  @keyframes slideInFromRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  /* Touch-friendly minimum size */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
 }
