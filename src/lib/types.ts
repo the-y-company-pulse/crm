@@ -108,6 +108,8 @@ export type Participant = {
   projectId: string
   contactId: string
   status: "confirmed" | "tentative" | "cancelled"
+  invoicedAmount: number
+  isPaid: boolean
   notes: string | null
   contact?: {
     id: string

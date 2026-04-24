@@ -5,6 +5,8 @@ import { z } from "zod"
 
 const UpdateParticipantSchema = z.object({
   status: z.enum(["confirmed", "tentative", "cancelled"]).optional(),
+  invoicedAmount: z.number().int().nonnegative().optional(),
+  isPaid: z.boolean().optional(),
   notes: z.string().nullable().optional(),
 })
 

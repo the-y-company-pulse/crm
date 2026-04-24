@@ -6,6 +6,8 @@ import { z } from "zod"
 const AddParticipantSchema = z.object({
   contactId: z.string().min(1),
   status: z.enum(["confirmed", "tentative", "cancelled"]).default("confirmed"),
+  invoicedAmount: z.number().int().nonnegative().default(0),
+  isPaid: z.boolean().default(false),
   notes: z.string().nullable().optional(),
 })
 
@@ -26,6 +28,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       projectId,
       contactId: parsed.data.contactId,
       status: parsed.data.status,
+      invoicedAmount: parsed.data.invoicedAmount,
+      isPaid: parsed.data.isPaid,
       notes: parsed.data.notes,
     },
     include: {

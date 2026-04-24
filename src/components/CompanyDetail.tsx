@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import NewContactModal from "./NewContactModal"
 
 type Company = {
   id: string
@@ -44,6 +45,7 @@ type Company = {
 export default function CompanyDetail({ company: initialCompany }: { company: Company }) {
   const [company, setCompany] = useState(initialCompany)
   const [isEditing, setIsEditing] = useState(false)
+  const [showNewContactModal, setShowNewContactModal] = useState(false)
   const [formData, setFormData] = useState({
     orgNr: company.orgNr || "",
     industry: company.industry || "",
@@ -90,6 +92,26 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
       notes: company.notes || "",
     })
     setIsEditing(false)
+  }
+
+  async function handleCreateContact(data: any) {
+    const res = await fetch("/api/contacts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...data,
+        fullName: `${data.firstName} ${data.lastName}`,
+        companyId: company.id,
+      }),
+    })
+    if (!res.ok) return
+    const created = await res.json()
+    setCompany({
+      ...company,
+      contacts: [...company.contacts, created],
+    })
+    setShowNewContactModal(false)
+    router.refresh()
   }
 
   return (
@@ -225,9 +247,17 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
         </div>
 
         <div className="glass rounded-xl p-6">
-          <h2 className="font-display text-xl text-white mb-4">
-            Kontakter ({company.contacts.length})
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl text-white">
+              Kontakter ({company.contacts.length})
+            </h2>
+            <button onClick={() => setShowNewContactModal(true)} className="btn btn-primary text-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Lägg till kontakt
+            </button>
+          </div>
           {company.contacts.length === 0 ? (
             <div className="text-white/40 text-sm">Inga kontakter ännu</div>
           ) : (
@@ -297,6 +327,13 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
           </div>
         )}
       </div>
+
+      {showNewContactModal && (
+        <NewContactModal
+          onClose={() => setShowNewContactModal(false)}
+          onCreate={handleCreateContact}
+        />
+      )}
     </div>
   )
 }

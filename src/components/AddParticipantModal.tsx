@@ -9,6 +9,8 @@ type Props = {
   onAdd: (data: {
     contactId: string
     status: "confirmed" | "tentative" | "cancelled"
+    invoicedAmount: number
+    isPaid: boolean
     notes: string | null
   }) => void | Promise<void>
 }
@@ -17,6 +19,8 @@ export default function AddParticipantModal({ projectId, onClose, onAdd }: Props
   const [contactId, setContactId] = useState<string | null>(null)
   const [contactName, setContactName] = useState<string | null>(null)
   const [status, setStatus] = useState<"confirmed" | "tentative" | "cancelled">("confirmed")
+  const [invoicedAmount, setInvoicedAmount] = useState("")
+  const [isPaid, setIsPaid] = useState(false)
   const [notes, setNotes] = useState("")
   const [submitting, setSubmitting] = useState(false)
 
@@ -27,6 +31,8 @@ export default function AddParticipantModal({ projectId, onClose, onAdd }: Props
       await onAdd({
         contactId,
         status,
+        invoicedAmount: parseInt(invoicedAmount.replace(/\D/g, ""), 10) || 0,
+        isPaid,
         notes: notes.trim() || null,
       })
     } finally {
@@ -65,6 +71,31 @@ export default function AddParticipantModal({ projectId, onClose, onAdd }: Props
                 <option value="cancelled" className="bg-ink-900">Avbokad</option>
               </select>
             </Field>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field label="Fakturerat belopp (SEK)">
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  value={invoicedAmount}
+                  onChange={(e) => setInvoicedAmount(e.target.value)}
+                  placeholder="43000"
+                />
+              </Field>
+              <Field label="Betalningsstatus">
+                <div className="flex items-center h-full">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isPaid}
+                      onChange={(e) => setIsPaid(e.target.checked)}
+                      className="w-5 h-5 rounded border-white/20 bg-white/5 text-neon focus:ring-neon focus:ring-offset-0"
+                    />
+                    <span className="text-white text-sm">Betalt</span>
+                  </label>
+                </div>
+              </Field>
+            </div>
 
             <Field label="Anteckningar (valfritt)">
               <textarea

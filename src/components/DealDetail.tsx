@@ -110,7 +110,7 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
   return (
     <>
       <div
-        className="fixed inset-0 bg-ink-950/90 md:bg-black/60 backdrop-blur-md z-40 flex items-center justify-center p-0 md:p-8"
+        className="fixed inset-0 bg-ink-950/98 md:bg-black/90 backdrop-blur-lg z-40 flex items-center justify-center p-0 md:p-8"
         onClick={onClose}
       >
         <div

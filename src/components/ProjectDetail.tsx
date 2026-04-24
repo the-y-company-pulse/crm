@@ -16,7 +16,9 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
 
   const confirmedParticipants = project.participants.filter((p) => p.status === "confirmed")
   const availableSpots = project.maxParticipants - confirmedParticipants.length
-  const totalValue = confirmedParticipants.length * project.pricePerParticipant
+  const totalValue = confirmedParticipants.reduce((sum, p) => sum + p.invoicedAmount, 0)
+  const totalPaid = confirmedParticipants.filter((p) => p.isPaid).reduce((sum, p) => sum + p.invoicedAmount, 0)
+  const totalUnpaid = totalValue - totalPaid
   const pipelineValue = project.deals
     .filter((d) => d.status === "open")
     .reduce((sum, d) => sum + d.value, 0)
@@ -116,7 +118,7 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 mb-8">
         <div className="glass rounded-xl p-6">
           <div className="text-white/40 text-sm mb-2">Bekräftade deltagare</div>
           <div className="text-2xl font-bold text-white">
@@ -130,15 +132,21 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
           </div>
         </div>
         <div className="glass rounded-xl p-6">
-          <div className="text-white/40 text-sm mb-2">Totalt värde</div>
+          <div className="text-white/40 text-sm mb-2">Fakturerat</div>
           <div className="text-2xl font-bold text-white">
             {fmt(totalValue)}
           </div>
         </div>
         <div className="glass rounded-xl p-6">
-          <div className="text-white/40 text-sm mb-2">Pipeline-värde</div>
-          <div className="text-2xl font-bold text-white">
-            {fmt(pipelineValue)}
+          <div className="text-white/40 text-sm mb-2">Betalt</div>
+          <div className="text-2xl font-bold text-green-400">
+            {fmt(totalPaid)}
+          </div>
+        </div>
+        <div className="glass rounded-xl p-6">
+          <div className="text-white/40 text-sm mb-2">Obetalt</div>
+          <div className="text-2xl font-bold text-yellow-400">
+            {fmt(totalUnpaid)}
           </div>
         </div>
       </div>
@@ -190,7 +198,7 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
                 className="flex items-center justify-between p-4 rounded-lg bg-white/[0.03] border border-white/[0.08]"
               >
                 <div className="flex-1">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <Link
                       href={`/kontakter/${participant.contactId}`}
                       className="text-white font-medium hover:text-neon transition-colors"
@@ -206,6 +214,20 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
                     >
                       {PARTICIPANT_STATUS_LABELS[participant.status]}
                     </span>
+                    {participant.invoicedAmount > 0 && (
+                      <span className="text-white/60 text-sm font-medium">
+                        {fmt(participant.invoicedAmount)}
+                      </span>
+                    )}
+                    {participant.isPaid ? (
+                      <span className="px-2 py-0.5 text-xs rounded bg-green-500/20 text-green-400">
+                        ✓ Betalt
+                      </span>
+                    ) : participant.invoicedAmount > 0 ? (
+                      <span className="px-2 py-0.5 text-xs rounded bg-yellow-500/20 text-yellow-400">
+                        Obetalt
+                      </span>
+                    ) : null}
                   </div>
                   <div className="text-white/40 text-sm mt-1">
                     {participant.contact?.company?.name && (
