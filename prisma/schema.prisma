@@ -44,13 +44,71 @@ model Stage {
   @@map("stages")
 }
 
+// CRM: Company (Företagsregister)
+model Company {
+  id          String    @id @default(cuid())
+  name        String    // Original case preserved
+  nameNorm    String    // Normalized for duplicate detection (lowercase, trimmed)
+  orgNr       String?   // Organization number
+  industry    String?   // Bransch
+  website     String?
+  address     String?
+  employees   Int?      // Number of employees
+  notes       String?   @db.Text
+
+  contacts    Contact[]
+  deals       Deal[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([nameNorm])
+  @@index([nameNorm])
+  @@map("companies")
+}
+
+// CRM: Contact (Kontaktpersoner)
+model Contact {
+  id          String    @id @default(cuid())
+  firstName   String
+  lastName    String
+  fullName    String    // For search/display
+  title       String?   // Job title (e.g. "Inköpschef")
+  email       String?
+  phone       String?
+  linkedin    String?
+  notes       String?   @db.Text
+
+  companyId   String?
+  company     Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  deals       Deal[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([email])
+  @@map("contacts")
+}
+
 model Deal {
   id         String     @id @default(cuid())
   title      String
+
+  // NEW: Normalized relations (optional during migration)
+  companyId  String?
+  company_rel Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  contactId  String?
+  contact_rel Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  // OLD: Kept as backup during migration (will be removed later)
   company    String?
   contact    String?
   email      String?
   phone      String?
+
   value      Int        @default(0) // value in SEK (no decimals)
   notes      String?
   status     String     @default("open") // open | won | lost
@@ -77,6 +135,8 @@ model Deal {
   @@index([stageId])
   @@index([ownerId])
   @@index([wonAt])
+  @@index([companyId])
+  @@index([contactId])
   @@map("deals")
 }
 

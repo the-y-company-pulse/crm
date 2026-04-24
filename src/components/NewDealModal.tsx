@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Stage, User } from "@/lib/types";
+import CompanyAutocomplete from "./CompanyAutocomplete";
+import ContactAutocomplete from "./ContactAutocomplete";
 
 type Props = {
   stages: Stage[];
@@ -9,15 +11,24 @@ type Props = {
   currentUserId: string;
   onClose: () => void;
   onCreate: (data: {
-    title: string; company: string; contact: string; value: number; stageId: string; ownerId: string;
+    title: string;
+    companyId: string | null;
+    company: string | null;
+    contactId: string | null;
+    contact: string | null;
+    value: number;
+    stageId: string;
+    ownerId: string;
   }) => void | Promise<void>;
 };
 
 export default function NewDealModal({ stages, users, currentUserId, onClose, onCreate }: Props) {
   const openStages = stages.filter((s) => s.status === null);
   const [title, setTitle] = useState("");
-  const [company, setCompany] = useState("");
-  const [contact, setContact] = useState("");
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [contactId, setContactId] = useState<string | null>(null);
+  const [contactName, setContactName] = useState<string | null>(null);
   const [value, setValue] = useState("");
   const [stageId, setStageId] = useState(openStages[0]?.id ?? stages[0]?.id ?? "");
   const [ownerId, setOwnerId] = useState(currentUserId);
@@ -29,8 +40,10 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
     try {
       await onCreate({
         title: title.trim(),
-        company: company.trim(),
-        contact: contact.trim(),
+        companyId,
+        company: companyName,
+        contactId,
+        contact: contactName,
         value: parseInt(value.replace(/\D/g, ""), 10) || 0,
         stageId,
         ownerId,
@@ -52,10 +65,25 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Företag">
-                <input className="input" value={company} onChange={(e) => setCompany(e.target.value)} />
+                <CompanyAutocomplete
+                  value={companyId}
+                  onChange={(id, name) => {
+                    setCompanyId(id);
+                    setCompanyName(name);
+                  }}
+                  placeholder="Sök eller skapa företag..."
+                />
               </Field>
               <Field label="Kontaktperson">
-                <input className="input" value={contact} onChange={(e) => setContact(e.target.value)} />
+                <ContactAutocomplete
+                  value={contactId}
+                  onChange={(id, name) => {
+                    setContactId(id);
+                    setContactName(name);
+                  }}
+                  companyId={companyId}
+                  placeholder="Sök eller skapa kontakt..."
+                />
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-3">

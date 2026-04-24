@@ -23,6 +23,10 @@ export default function DealCard({ deal, isSelected, isOverlay, onClick }: Props
   const fmt = (v: number) => v.toLocaleString("sv-SE") + " SEK";
   const activityCount = deal.activities?.length ?? 0;
 
+  // Use normalized company/contact or fallback to fritext
+  const companyName = (deal as any).company_rel?.name || deal.company;
+  const contactName = (deal as any).contact_rel?.fullName || deal.contact;
+
   const style = {
     transform: CSS.Translate.toString(transform),
     borderLeftColor: ownerColor,
@@ -45,9 +49,9 @@ export default function DealCard({ deal, isSelected, isOverlay, onClick }: Props
       <div className="text-base font-semibold text-white leading-snug mb-1.5">
         {deal.title}
       </div>
-      {(deal.company || deal.contact) && (
+      {(companyName || contactName) && (
         <div className="text-sm text-white/50 mb-3 leading-snug">
-          {[deal.company, deal.contact].filter(Boolean).join(" · ")}
+          {[companyName, contactName].filter(Boolean).join(" · ")}
         </div>
       )}
       <div className="flex items-center justify-between">

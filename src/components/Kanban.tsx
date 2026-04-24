@@ -88,7 +88,14 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
   }
 
   async function handleCreateDeal(data: {
-    title: string; company: string; contact: string; value: number; stageId: string; ownerId: string;
+    title: string;
+    companyId: string | null;
+    company: string | null;
+    contactId: string | null;
+    contact: string | null;
+    value: number;
+    stageId: string;
+    ownerId: string;
   }) {
     const res = await fetch("/api/deals", {
       method: "POST",
