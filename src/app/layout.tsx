@@ -14,7 +14,7 @@ const sans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Y CRM",
+  title: "The Y CRM",
   description: "The Y Company — affärspipeline",
 };
 
