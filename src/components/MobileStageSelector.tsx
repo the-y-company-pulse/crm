@@ -1,9 +1,11 @@
 "use client";
 
-import type { Stage } from "@/lib/types";
+import type { Stage, Deal } from "@/lib/types";
+
+type StageWithDeals = Stage & { deals?: Deal[] };
 
 type Props = {
-  stages: Stage[];
+  stages: StageWithDeals[];
   selectedStageId: string;
   onChange: (stageId: string) => void;
 };
