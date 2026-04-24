@@ -4,8 +4,6 @@ import type { User } from "@/lib/types";
 
 type Props = {
   users: User[];
-  currentUserId: string;
-  onCurrentUserChange: (id: string) => void;
   ownerFilter: string | "all";
   onOwnerFilterChange: (id: string | "all") => void;
   onNewDeal: () => void;
@@ -19,8 +17,6 @@ type Props = {
 
 export default function Toolbar({
   users,
-  currentUserId,
-  onCurrentUserChange,
   ownerFilter,
   onOwnerFilterChange,
   onNewDeal,
@@ -73,19 +69,6 @@ export default function Toolbar({
             );
           })}
         </div>
-
-        <select
-          value={currentUserId}
-          onChange={(e) => onCurrentUserChange(e.target.value)}
-          className="input py-2.5 text-sm w-auto font-medium"
-          title="Inloggad som"
-        >
-          {users.map((u) => (
-            <option key={u.id} value={u.id} className="bg-ink-900">
-              Inloggad: {u.name}
-            </option>
-          ))}
-        </select>
 
         <button
           onClick={onToggleLost}

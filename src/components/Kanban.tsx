@@ -22,13 +22,13 @@ type Props = {
   initialDeals: Deal[];
   stages: Stage[];
   users: User[];
+  currentUserId: string;
 };
 
-export default function Kanban({ initialDeals, stages, users }: Props) {
+export default function Kanban({ initialDeals, stages, users, currentUserId }: Props) {
   const [deals, setDeals] = useState<Deal[]>(initialDeals);
   const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string>(users[0]?.id ?? "");
   const [showNewDeal, setShowNewDeal] = useState(false);
   const [ownerFilter, setOwnerFilter] = useState<string | "all">("all");
   const [showLost, setShowLost] = useState(false);
@@ -117,8 +117,6 @@ export default function Kanban({ initialDeals, stages, users }: Props) {
     <div className="flex flex-col min-h-screen">
       <Toolbar
         users={users}
-        currentUserId={currentUserId}
-        onCurrentUserChange={setCurrentUserId}
         ownerFilter={ownerFilter}
         onOwnerFilterChange={setOwnerFilter}
         onNewDeal={() => setShowNewDeal(true)}

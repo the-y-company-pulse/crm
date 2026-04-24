@@ -2,10 +2,15 @@ import { prisma } from "@/lib/prisma";
 import Kanban from "@/components/Kanban";
 import TopNav from "@/components/TopNav";
 import type { Deal, Stage, User } from "@/lib/types";
+import { auth } from "../../auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const session = await auth();
+  if (!session) redirect("/login");
+
   const [deals, stages, users] = await Promise.all([
     prisma.deal.findMany({
       include: {
@@ -28,6 +33,7 @@ export default async function HomePage() {
         initialDeals={serialize(deals) as unknown as Deal[]}
         stages={serialize(stages) as unknown as Stage[]}
         users={serialize(users) as unknown as User[]}
+        currentUserId={session.user.id}
       />
     </main>
   );

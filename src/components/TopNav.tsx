@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "../../auth";
+import LogoutButton from "./LogoutButton";
 
 type Props = {
   currentTab: "pipeline" | "statistik";
@@ -47,6 +48,7 @@ export default async function TopNav({ currentTab }: Props) {
             Admin
           </Link>
         )}
+        <LogoutButton />
       </nav>
     </header>
   );
