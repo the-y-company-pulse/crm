@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { requireAuth } from "@/lib/auth-utils";
 
 export async function GET() {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   const [deals, stages, users] = await Promise.all([
     prisma.deal.findMany({
       include: {
@@ -27,6 +31,9 @@ const CreateDealSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   const body = await req.json();
   const parsed = CreateDealSchema.safeParse(body);
   if (!parsed.success) {

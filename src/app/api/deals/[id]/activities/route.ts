@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { requireAuth } from "@/lib/auth-utils";
 
 const CreateActivitySchema = z.object({
   type: z.enum(["note", "call", "email", "meeting"]),
@@ -13,6 +14,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   const { id: dealId } = await params;
   const body = await req.json();
   const parsed = CreateActivitySchema.safeParse(body);

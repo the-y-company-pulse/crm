@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { auth } from "../../auth";
 
 type Props = {
   currentTab: "pipeline" | "statistik";
 };
 
-export default function TopNav({ currentTab }: Props) {
+export default async function TopNav({ currentTab }: Props) {
+  const session = await auth();
+  const isAdmin = session?.user?.role === "admin";
   return (
     <header className="px-8 py-5 flex items-center justify-between gap-6 flex-wrap border-b border-white/[0.06]">
       <div className="font-harabara text-2xl md:text-3xl font-black">
@@ -36,6 +39,14 @@ export default function TopNav({ currentTab }: Props) {
         >
           Statistik
         </Link>
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="px-5 py-2.5 text-sm font-medium rounded-md transition-colors text-white/50 hover:text-white/80"
+          >
+            Admin
+          </Link>
+        )}
       </nav>
     </header>
   );

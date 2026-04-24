@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { requireAuth } from "@/lib/auth-utils";
 
 export async function GET(req: NextRequest) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   const yearParam = req.nextUrl.searchParams.get("year");
   const where = yearParam ? { year: parseInt(yearParam, 10) } : {};
   const targets = await prisma.target.findMany({
@@ -25,6 +29,9 @@ const UpsertSchema = z.object({
 // unique key (Postgres treats NULL as distinct from NULL in unique constraints),
 // so we use find-then-create/update instead. amount=0 deletes the target.
 export async function POST(req: NextRequest) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   const body = await req.json();
   const parsed = UpsertSchema.safeParse(body);
   if (!parsed.success) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-utils";
 
 // GET /api/sales/summary?year=2026&userId=<id|all>
 //
@@ -11,6 +12,9 @@ import { prisma } from "@/lib/prisma";
 //
 // userId omitted or "all" → company-wide (all users)
 export async function GET(req: NextRequest) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   const url = req.nextUrl;
   const year = parseInt(url.searchParams.get("year") || String(new Date().getFullYear()), 10);
   const userIdParam = url.searchParams.get("userId");
