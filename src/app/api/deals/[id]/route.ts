@@ -122,12 +122,15 @@ export async function PATCH(
 
   // Or if status is being updated directly
   else if (parsed.data.status === "won") {
+    updateData.status = "won";
     updateData.wonAt = new Date();
     updateData.lostAt = null;
   } else if (parsed.data.status === "lost") {
+    updateData.status = "lost";
     updateData.lostAt = new Date();
     updateData.wonAt = null;
   } else if (parsed.data.status === "open") {
+    updateData.status = "open";
     updateData.wonAt = null;
     updateData.lostAt = null;
   }

@@ -55,6 +55,57 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
     });
   };
 
+  async function handleMarkWon() {
+    if (!confirm("Markera denna affär som vunnen?")) return;
+    try {
+      const res = await fetch(`/api/deals/${deal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "won" }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      const updated: Deal = await res.json();
+      onDealUpdate(updated);
+      onClose();
+    } catch (err) {
+      console.error("Failed to mark as won:", err);
+      alert("Kunde inte uppdatera affären");
+    }
+  }
+
+  async function handleMarkLost() {
+    if (!confirm("Markera denna affär som förlorad?")) return;
+    try {
+      const res = await fetch(`/api/deals/${deal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "lost" }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      const updated: Deal = await res.json();
+      onDealUpdate(updated);
+      onClose();
+    } catch (err) {
+      console.error("Failed to mark as lost:", err);
+      alert("Kunde inte uppdatera affären");
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm("Är du säker på att du vill ta bort denna affär? Detta går inte att ångra.")) return;
+    try {
+      const res = await fetch(`/api/deals/${deal.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      onClose();
+      window.location.reload(); // Reload to update the list
+    } catch (err) {
+      console.error("Failed to delete:", err);
+      alert("Kunde inte ta bort affären");
+    }
+  }
+
   return (
     <>
       <div
@@ -83,6 +134,32 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
               </p>
             )}
             <p className="text-xl font-medium text-neon mt-4">{fmt(deal.value)}</p>
+
+            {/* Action buttons */}
+            <div className="flex gap-2 mt-4">
+              {deal.status !== "won" && (
+                <button
+                  onClick={handleMarkWon}
+                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-green-600/20 text-green-400 hover:bg-green-600/30 border border-green-600/30 transition-colors"
+                >
+                  ✓ Vunnen
+                </button>
+              )}
+              {deal.status !== "lost" && (
+                <button
+                  onClick={handleMarkLost}
+                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-600/30 transition-colors"
+                >
+                  ✕ Förlorad
+                </button>
+              )}
+              <button
+                onClick={handleDelete}
+                className="px-3 py-1.5 text-xs font-medium rounded-md bg-white/[0.05] text-white/40 hover:bg-red-600/20 hover:text-red-400 border border-white/[0.08] hover:border-red-600/30 transition-colors"
+              >
+                🗑 Ta bort
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button
