@@ -8,7 +8,7 @@
   }
   body {
     font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, var(--font-sans), system-ui, sans-serif;
-    background-color: #080f1a;
+    background-color: #080f1a; /* Djupt mörk bakgrund */
     background-attachment: fixed;
   }
   h1, h2, h3, .font-display {
@@ -29,24 +29,29 @@
 @layer components {
   /* Glass card surface — used for columns, panels, modals */
   .glass {
-    @apply bg-white/[0.03] border border-white/[0.08] backdrop-blur-sm;
+    @apply bg-navy/80 border border-white/[0.15] backdrop-blur-sm;
   }
   .glass-strong {
-    @apply bg-white/[0.05] border border-white/[0.12];
+    @apply bg-navy border border-white/[0.20];
   }
 
   /* Deal card */
   .y-card {
-    @apply bg-white/[0.04] border border-white/[0.08] rounded-lg cursor-grab transition-all;
+    @apply border border-white/[0.15] rounded-lg cursor-grab transition-all;
+    background: linear-gradient(135deg, #2b394f 0%, #1f2c3f 100%);
     border-left-width: 4px;
   }
-  .y-card:hover { @apply bg-white/[0.07] border-white/[0.18]; }
+  .y-card:hover {
+    background: linear-gradient(135deg, #34445f 0%, #283549 100%);
+    @apply border-white/[0.30];
+  }
   .y-card.is-dragging { @apply opacity-40; }
   .y-card.is-selected { box-shadow: 0 0 0 2px #deff00; }
 
   /* Kanban column */
   .y-col {
-    @apply rounded-xl p-4 min-h-[400px] flex flex-col bg-white/[0.02] border border-white/[0.05];
+    @apply rounded-xl p-4 min-h-[400px] flex flex-col border border-white/[0.10];
+    background: linear-gradient(180deg, rgba(43,57,79,0.4) 0%, rgba(31,44,63,0.3) 100%);
   }
   .y-col.is-over {
     @apply bg-neon/5 border-neon/40;
@@ -55,23 +60,23 @@
   /* Buttons */
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-5 py-3 text-base font-medium rounded-lg
-           border border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:border-white/30 transition-all;
+           border border-white/15 bg-navy/60 text-white hover:bg-navy hover:border-white/30 transition-all;
   }
   .btn-primary {
     @apply bg-neon border-neon text-ink-950 hover:bg-neon/90 hover:border-neon/90 hover:shadow-neon-glow font-semibold;
   }
   .btn-secondary {
-    @apply bg-white/[0.08] border-white/20 text-white/80 hover:bg-white/[0.12] hover:border-white/30 hover:text-white;
+    @apply bg-navy/80 border-white/20 text-white/80 hover:bg-navy hover:border-white/30 hover:text-white;
   }
   .btn-ghost {
-    @apply bg-transparent border-transparent text-white/60 hover:text-white hover:bg-white/[0.04] px-4 py-2;
+    @apply bg-transparent border-transparent text-white/60 hover:text-white hover:bg-navy/40 px-4 py-2;
   }
 
   /* Inputs */
   .input {
-    @apply w-full px-4 py-3 text-base rounded-lg bg-white/[0.03] border border-white/[0.10] text-white
+    @apply w-full px-4 py-3 text-base rounded-lg bg-navy/60 border border-white/[0.15] text-white
            placeholder:text-white/30
-           focus:outline-none focus:border-neon/60 focus:bg-white/[0.05] transition-colors;
+           focus:outline-none focus:border-neon/60 focus:bg-navy/80 transition-colors;
   }
 
   /* Owner dot */
