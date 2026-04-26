@@ -110,9 +110,11 @@ export async function POST(req: NextRequest) {
     data: dealData,
     include: {
       owner: true,
+      stage: true,
       activities: true,
       company_rel: true,
       contact_rel: { include: { company: true } },
+      project: true,
     },
   });
   return NextResponse.json(deal, { status: 201 });

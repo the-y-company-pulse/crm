@@ -69,11 +69,15 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
     // Optimistic update
     setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stageId: newStageId } : d)));
     try {
-      await fetch(`/api/deals/${dealId}`, {
+      const res = await fetch(`/api/deals/${dealId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stageId: newStageId }),
       });
+      if (!res.ok) throw new Error("Failed to update");
+      const updated: Deal = await res.json();
+      // Update with server response to ensure consistency
+      setDeals((prev) => prev.map((d) => (d.id === dealId ? updated : d)));
     } catch {
       // Revert on failure
       setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stageId: deal.stageId } : d)));
@@ -132,11 +136,15 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
     // Optimistic update
     setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stageId: newStageId } : d)));
     try {
-      await fetch(`/api/deals/${dealId}`, {
+      const res = await fetch(`/api/deals/${dealId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stageId: newStageId }),
       });
+      if (!res.ok) throw new Error("Failed to update");
+      const updated: Deal = await res.json();
+      // Update with server response to ensure consistency
+      setDeals((prev) => prev.map((d) => (d.id === dealId ? updated : d)));
     } catch {
       // Revert on failure
       setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stageId: deal.stageId } : d)));

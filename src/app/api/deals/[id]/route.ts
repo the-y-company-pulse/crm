@@ -104,6 +104,7 @@ export async function PATCH(
 
   // If stageId is being updated, check if it's a terminal stage
   if (parsed.data.stageId) {
+    updateData.stageId = parsed.data.stageId;
     const stage = await prisma.stage.findUnique({
       where: { id: parsed.data.stageId },
       select: { status: true }
@@ -124,15 +125,31 @@ export async function PATCH(
     }
   }
 
-  // Or if status is being updated directly
+  // Or if status is being updated directly, also move to correct stage
   else if (parsed.data.status === "won") {
     updateData.status = "won";
     updateData.wonAt = new Date();
     updateData.lostAt = null;
+    // Find the "won" stage and move deal there
+    const wonStage = await prisma.stage.findFirst({
+      where: { status: "won" },
+      select: { id: true }
+    });
+    if (wonStage) {
+      updateData.stageId = wonStage.id;
+    }
   } else if (parsed.data.status === "lost") {
     updateData.status = "lost";
     updateData.lostAt = new Date();
     updateData.wonAt = null;
+    // Find the "lost" stage and move deal there
+    const lostStage = await prisma.stage.findFirst({
+      where: { status: "lost" },
+      select: { id: true }
+    });
+    if (lostStage) {
+      updateData.stageId = lostStage.id;
+    }
   } else if (parsed.data.status === "open") {
     updateData.status = "open";
     updateData.wonAt = null;
@@ -144,9 +161,11 @@ export async function PATCH(
     data: updateData,
     include: {
       owner: true,
+      stage: true,
       activities: { include: { user: true }, orderBy: { occurredAt: "desc" } },
       company_rel: true,
       contact_rel: { include: { company: true } },
+      project: true,
     },
   });
   return NextResponse.json(deal);
