@@ -36,7 +36,8 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
   const [showNewDeal, setShowNewDeal] = useState(false);
   const [ownerFilter, setOwnerFilter] = useState<string | "all">("all");
   const [showLost, setShowLost] = useState(false);
-  const [showWon, setShowWon] = useState(false);
+  const [showWon, setShowWon] = useState(true); // Always show won by default
+  const [showAllWonMobile, setShowAllWonMobile] = useState(false);
 
   // State för mobil single-column view
   const visibleStages = stages.filter((s) => {
@@ -160,7 +161,23 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
 
   // Mobile view
   if (isMobile) {
-    const dealsInStage = visibleDeals.filter((d) => d.stageId === selectedMobileStage);
+    let dealsInStage = visibleDeals.filter((d) => d.stageId === selectedMobileStage);
+    const selectedStage = stages.find((s) => s.id === selectedMobileStage);
+    const isWonStage = selectedStage?.status === "won";
+
+    // For won stage on mobile, limit to 10 most recent
+    const INITIAL_LIMIT = 10;
+    let hasMoreWon = false;
+    if (isWonStage && dealsInStage.length > INITIAL_LIMIT && !showAllWonMobile) {
+      const sorted = [...dealsInStage].sort((a, b) => {
+        const dateA = a.wonAt ? new Date(a.wonAt).getTime() : 0;
+        const dateB = b.wonAt ? new Date(b.wonAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      dealsInStage = sorted.slice(0, INITIAL_LIMIT);
+      hasMoreWon = true;
+    }
+
     // Attach stage info to each stage for the selector
     const stagesWithCounts = visibleStages.map(stage => ({
       ...stage,
@@ -185,7 +202,10 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
         <MobileStageSelector
           stages={stagesWithCounts}
           selectedStageId={selectedMobileStage}
-          onChange={setSelectedMobileStage}
+          onChange={(id) => {
+            setSelectedMobileStage(id);
+            setShowAllWonMobile(false); // Reset when switching stage
+          }}
         />
 
         {/* Single column of cards */}
@@ -195,15 +215,25 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
               Inga affärer i denna fas
             </p>
           ) : (
-            dealsInStage.map((deal) => (
-              <MobileDealCard
-                key={deal.id}
-                deal={deal}
-                onOpen={() => setSelectedDealId(deal.id)}
-                onMove={handleMoveDeal}
-                stages={visibleStages}
-              />
-            ))
+            <>
+              {dealsInStage.map((deal) => (
+                <MobileDealCard
+                  key={deal.id}
+                  deal={deal}
+                  onOpen={() => setSelectedDealId(deal.id)}
+                  onMove={handleMoveDeal}
+                  stages={visibleStages}
+                />
+              ))}
+              {hasMoreWon && (
+                <button
+                  onClick={() => setShowAllWonMobile(true)}
+                  className="text-sm text-neon hover:text-neon/80 transition-colors py-4 px-4 rounded-lg bg-neon/5 hover:bg-neon/10 border border-neon/20 font-medium touch-target"
+                >
+                  Visa alla {visibleDeals.filter((d) => d.stageId === selectedMobileStage).length} affärer
+                </button>
+              )}
+            </>
           )}
         </div>
 
