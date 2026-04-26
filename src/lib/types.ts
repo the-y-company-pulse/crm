@@ -129,6 +129,7 @@ export type ProjectWithStats = Project & {
 
 export type ProjectDetail = Project & {
   participants: Participant[]
+  sessions: ProjectSession[]
   deals: Array<{
     id: string
     title: string
@@ -157,4 +158,15 @@ export const PARTICIPANT_STATUS_LABELS: Record<Participant["status"], string> = 
   confirmed: "Bekräftad",
   tentative: "Preliminär",
   cancelled: "Avbokad",
+}
+
+export type ProjectSession = {
+  id: string
+  projectId: string
+  date: string
+  startTime: string
+  endTime: string
+  notes: string | null
+  createdAt: string
+  updatedAt: string
 }

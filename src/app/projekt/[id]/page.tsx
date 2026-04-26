@@ -27,6 +27,9 @@ export default async function ProjectDetailPage({
         },
         orderBy: { createdAt: "desc" },
       },
+      sessions: {
+        orderBy: { date: "asc" },
+      },
       deals: {
         include: {
           owner: true,

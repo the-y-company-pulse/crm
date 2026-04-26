@@ -7,11 +7,18 @@ import type { ProjectDetail as ProjectDetailType } from "@/lib/types"
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS, PARTICIPANT_STATUS_LABELS } from "@/lib/types"
 import EditProjectModal from "./EditProjectModal"
 import AddParticipantModal from "./AddParticipantModal"
+import EditParticipantModal from "./EditParticipantModal"
+import AddSessionsModal from "./AddSessionsModal"
+import EditSessionModal from "./EditSessionModal"
+import type { Participant, ProjectSession } from "@/lib/types"
 
 export default function ProjectDetail({ project: initialProject }: { project: ProjectDetailType }) {
   const [project, setProject] = useState(initialProject)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAddParticipant, setShowAddParticipant] = useState(false)
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null)
+  const [showAddSessions, setShowAddSessions] = useState(false)
+  const [editingSession, setEditingSession] = useState<ProjectSession | null>(null)
   const router = useRouter()
 
   const confirmedParticipants = project.participants.filter((p) => p.status === "confirmed")
@@ -69,6 +76,76 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
       setProject({
         ...project,
         participants: project.participants.filter((p) => p.id !== participantId),
+      })
+      router.refresh()
+    }
+  }
+
+  async function handleUpdateParticipant(participantId: string, data: any) {
+    const res = await fetch(`/api/projects/${project.id}/participants/${participantId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (res.ok) {
+      const updated = await res.json()
+      setProject({
+        ...project,
+        participants: project.participants.map((p) => (p.id === participantId ? updated : p)),
+      })
+      setEditingParticipant(null)
+      router.refresh()
+    }
+  }
+
+  async function handleAddSessions(data: any) {
+    const res = await fetch(`/api/projects/${project.id}/sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (res.ok) {
+      const sessions = await res.json()
+      setProject({
+        ...project,
+        sessions,
+      })
+      setShowAddSessions(false)
+      router.refresh()
+    }
+  }
+
+  async function handleUpdateSession(sessionId: string, data: any) {
+    const res = await fetch(`/api/projects/${project.id}/sessions/${sessionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (res.ok) {
+      const updated = await res.json()
+      setProject({
+        ...project,
+        sessions: project.sessions.map((s) => (s.id === sessionId ? updated : s)),
+      })
+      setEditingSession(null)
+      router.refresh()
+    }
+  }
+
+  async function handleRemoveSession(sessionId: string) {
+    if (!confirm("Är du säker på att du vill ta bort denna session?")) return
+
+    const res = await fetch(`/api/projects/${project.id}/sessions/${sessionId}`, {
+      method: "DELETE",
+    })
+
+    if (res.ok) {
+      setProject({
+        ...project,
+        sessions: project.sessions.filter((s) => s.id !== sessionId),
       })
       router.refresh()
     }
@@ -153,8 +230,16 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
 
       {/* Info Section */}
       <div className="glass rounded-xl p-6 mb-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Information</h3>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">Information</h3>
+          <button onClick={() => setShowAddSessions(true)} className="btn">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Lägg till sessioner
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-6 mb-6">
           <div>
             <div className="text-white/40 text-sm mb-1">Format</div>
             <div className="text-white">{project.format || "—"}</div>
@@ -165,9 +250,59 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
           </div>
         </div>
         {project.notes && (
-          <div className="mt-4">
+          <div className="mb-6">
             <div className="text-white/40 text-sm mb-1">Anteckningar</div>
             <div className="text-white whitespace-pre-wrap">{project.notes}</div>
+          </div>
+        )}
+
+        {/* Sessions */}
+        {project.sessions.length > 0 && (
+          <div>
+            <div className="text-white/40 text-sm mb-3">Sessioner ({project.sessions.length})</div>
+            <div className="space-y-2">
+              {project.sessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] border border-white/[0.08]"
+                >
+                  <div className="flex-1">
+                    <div className="text-white font-medium">
+                      {new Date(session.date).toLocaleDateString("sv-SE", {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                    <div className="text-white/60 text-sm">
+                      {session.startTime} - {session.endTime}
+                      {session.notes && ` · ${session.notes}`}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => setEditingSession(session)}
+                      className="text-white/40 hover:text-neon transition-colors"
+                      title="Redigera session"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleRemoveSession(session.id)}
+                      className="text-white/40 hover:text-red-400 transition-colors"
+                      title="Ta bort session"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -249,15 +384,26 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
                     <div className="text-white/50 text-sm mt-2 italic">{participant.notes}</div>
                   )}
                 </div>
-                <button
-                  onClick={() => handleRemoveParticipant(participant.id)}
-                  className="text-white/40 hover:text-red-400 transition-colors ml-4"
-                  title="Ta bort deltagare"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-2 ml-4">
+                  <button
+                    onClick={() => setEditingParticipant(participant)}
+                    className="text-white/40 hover:text-neon transition-colors"
+                    title="Redigera deltagare"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleRemoveParticipant(participant.id)}
+                    className="text-white/40 hover:text-red-400 transition-colors"
+                    title="Ta bort deltagare"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -324,6 +470,30 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
           projectId={project.id}
           onClose={() => setShowAddParticipant(false)}
           onAdd={handleAddParticipant}
+        />
+      )}
+
+      {editingParticipant && (
+        <EditParticipantModal
+          participant={editingParticipant}
+          onClose={() => setEditingParticipant(null)}
+          onUpdate={(data) => handleUpdateParticipant(editingParticipant.id, data)}
+        />
+      )}
+
+      {showAddSessions && (
+        <AddSessionsModal
+          projectId={project.id}
+          onClose={() => setShowAddSessions(false)}
+          onAdd={handleAddSessions}
+        />
+      )}
+
+      {editingSession && (
+        <EditSessionModal
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
+          onUpdate={(data) => handleUpdateSession(editingSession.id, data)}
         />
       )}
     </div>

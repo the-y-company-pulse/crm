@@ -32,6 +32,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         },
         orderBy: { createdAt: "desc" },
       },
+      sessions: {
+        orderBy: { date: "asc" },
+      },
       deals: {
         include: {
           owner: true,
