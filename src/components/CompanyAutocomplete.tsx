@@ -29,7 +29,6 @@ export default function CompanyAutocomplete({
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
-  const isSelectingRef = useRef(false)
 
   // Fetch company name if value is set
   useEffect(() => {
@@ -80,15 +79,10 @@ export default function CompanyAutocomplete({
   }, [])
 
   function handleSelect(company: Company) {
-    isSelectingRef.current = true
     setSelectedCompany(company)
     setQuery(company.name)
     onChange(company.id, company.name)
     setShowDropdown(false)
-    // Reset flag after state updates
-    setTimeout(() => {
-      isSelectingRef.current = false
-    }, 0)
   }
 
   function handleCreateNew() {
@@ -123,9 +117,10 @@ export default function CompanyAutocomplete({
           type="text"
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value)
-            // Only reset if not programmatically selecting
-            if (!isSelectingRef.current) {
+            const newQuery = e.target.value
+            setQuery(newQuery)
+            // Only reset if user is typing (different from selected company name)
+            if (selectedCompany && newQuery !== selectedCompany.name) {
               setSelectedCompany(null)
               onChange(null, null)
             }

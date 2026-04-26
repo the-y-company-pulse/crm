@@ -28,7 +28,6 @@ export default function ProjectAutocomplete({
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [recentProjects, setRecentProjects] = useState<Project[]>([])
   const wrapperRef = useRef<HTMLDivElement>(null)
-  const isSelectingRef = useRef(false)
 
   // Fetch recent projects on mount
   useEffect(() => {
@@ -50,12 +49,8 @@ export default function ProjectAutocomplete({
       fetch(`/api/projects/${value}`)
         .then((res) => res.json())
         .then((project) => {
-          isSelectingRef.current = true
           setSelectedProject(project)
           setQuery(project.name)
-          setTimeout(() => {
-            isSelectingRef.current = false
-          }, 0)
         })
         .catch(() => {})
     }
@@ -97,15 +92,10 @@ export default function ProjectAutocomplete({
   }, [])
 
   function handleSelect(project: Project) {
-    isSelectingRef.current = true
     setSelectedProject(project)
     setQuery(project.name)
     onChange(project.id)
     setShowDropdown(false)
-    // Reset flag after state updates
-    setTimeout(() => {
-      isSelectingRef.current = false
-    }, 0)
   }
 
   function handleClear() {
@@ -122,9 +112,10 @@ export default function ProjectAutocomplete({
           type="text"
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value)
-            // Only reset if not programmatically selecting
-            if (!isSelectingRef.current) {
+            const newQuery = e.target.value
+            setQuery(newQuery)
+            // Only reset if user is typing (different from selected project name)
+            if (selectedProject && newQuery !== selectedProject.name) {
               setSelectedProject(null)
               onChange(null)
             }
