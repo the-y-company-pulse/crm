@@ -151,36 +151,6 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
                 </div>
               </div>
             )}
-
-            {/* BCC Email Logging */}
-            <div className="mt-4 p-3 rounded-lg bg-neon/10 border border-neon/20">
-              <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-neon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <span className="text-neon font-medium text-sm">Logga e-post via BCC</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value="qa2q6lvtksvsta112odo2vcwmklj4jgj@hook.eu1.make.com"
-                  readOnly
-                  className="input flex-1 text-sm bg-white/5 border-white/10"
-                />
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText("qa2q6lvtksvsta112odo2vcwmklj4jgj@hook.eu1.make.com")
-                    alert("Kopierat!")
-                  }}
-                  className="btn text-sm"
-                >
-                  Kopiera
-                </button>
-              </div>
-              <p className="text-xs text-white/40 mt-2">
-                BCC:a denna adress på mail du vill logga automatiskt i CRM
-              </p>
-            </div>
           </div>
 
           {/* Close button and owner - right side on desktop, top on mobile */}
