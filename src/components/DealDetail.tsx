@@ -163,13 +163,13 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  value="crm@ycompany.se"
+                  value="qa2q6lvtksvsta112odo2vcwmklj4jgj@hook.eu1.make.com"
                   readOnly
                   className="input flex-1 text-sm bg-white/5 border-white/10"
                 />
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText("crm@ycompany.se")
+                    navigator.clipboard.writeText("qa2q6lvtksvsta112odo2vcwmklj4jgj@hook.eu1.make.com")
                     alert("Kopierat!")
                   }}
                   className="btn text-sm"
