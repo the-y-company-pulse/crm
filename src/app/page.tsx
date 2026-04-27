@@ -4,6 +4,7 @@ import TopNav from "@/components/TopNav";
 import type { Deal, Stage, User } from "@/lib/types";
 import { auth } from "../../auth";
 import { redirect } from "next/navigation";
+import { getPendingEmailCount } from "@/lib/email-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export default async function HomePage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [deals, stages, users] = await Promise.all([
+  const [deals, stages, users, pendingEmailCount] = await Promise.all([
     prisma.deal.findMany({
       include: {
         owner: true,
@@ -21,6 +22,7 @@ export default async function HomePage() {
     }),
     prisma.stage.findMany({ orderBy: { order: "asc" } }),
     prisma.user.findMany({ orderBy: { name: "asc" } }),
+    getPendingEmailCount(),
   ]);
 
   // Serialize Date → string for client component
@@ -30,7 +32,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen">
-      <TopNav currentTab="pipeline" isAdmin={isAdmin} />
+      <TopNav currentTab="pipeline" isAdmin={isAdmin} pendingEmailCount={pendingEmailCount} />
       <Kanban
         initialDeals={serialize(deals) as unknown as Deal[]}
         stages={serialize(stages) as unknown as Stage[]}

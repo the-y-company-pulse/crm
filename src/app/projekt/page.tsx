@@ -8,7 +8,7 @@ export default async function ProjectsPage() {
   const session = await auth()
   if (!session) redirect("/login")
 
-  const projects = await prisma.project.findMany({
+  const projectsRaw = await prisma.project.findMany({
     select: {
       id: true,
       name: true,
@@ -18,6 +18,12 @@ export default async function ProjectsPage() {
       pricePerParticipant: true,
       status: true,
       createdAt: true,
+      participants: {
+        select: {
+          invoicedAmount: true,
+          isPaid: true,
+        },
+      },
       _count: {
         select: {
           participants: true,
@@ -26,6 +32,28 @@ export default async function ProjectsPage() {
       },
     },
     orderBy: { startDate: "desc" },
+  })
+
+  // Calculate invoiced and paid amounts
+  const projects = projectsRaw.map((project) => {
+    const invoiced = project.participants.reduce((sum, p) => sum + p.invoicedAmount, 0)
+    const paid = project.participants
+      .filter((p) => p.isPaid)
+      .reduce((sum, p) => sum + p.invoicedAmount, 0)
+
+    return {
+      id: project.id,
+      name: project.name,
+      startDate: project.startDate,
+      format: project.format,
+      maxParticipants: project.maxParticipants,
+      pricePerParticipant: project.pricePerParticipant,
+      status: project.status,
+      createdAt: project.createdAt,
+      invoiced,
+      paid,
+      _count: project._count,
+    }
   })
 
   return (

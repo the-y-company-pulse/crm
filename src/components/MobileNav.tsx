@@ -6,9 +6,10 @@ type Props = {
   currentTab: string;
   isAdmin?: boolean;
   onClose: () => void;
+  pendingEmailCount?: number;
 };
 
-export default function MobileNav({ currentTab, isAdmin, onClose }: Props) {
+export default function MobileNav({ currentTab, isAdmin, onClose, pendingEmailCount = 0 }: Props) {
   const isActive = (tab: string) => currentTab === tab;
 
   return (
@@ -69,6 +70,23 @@ export default function MobileNav({ currentTab, isAdmin, onClose }: Props) {
             }`}
           >
             Projekt
+          </Link>
+
+          <Link
+            href="/mail-inbox"
+            onClick={onClose}
+            className={`px-5 py-3 text-lg font-medium rounded-md transition-colors relative ${
+              isActive("mail-inbox")
+                ? "bg-neon text-ink-950"
+                : "text-white/70 hover:text-white hover:bg-white/[0.05]"
+            }`}
+          >
+            Mail Inbox
+            {pendingEmailCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-neon text-ink-950 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {pendingEmailCount}
+              </span>
+            )}
           </Link>
 
           <Link

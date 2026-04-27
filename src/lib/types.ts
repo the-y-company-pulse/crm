@@ -121,6 +121,8 @@ export type Participant = {
 }
 
 export type ProjectWithStats = Project & {
+  invoiced: number
+  paid: number
   _count: {
     participants: number
     deals: number
@@ -169,4 +171,27 @@ export type ProjectSession = {
   notes: string | null
   createdAt: string
   updatedAt: string
+}
+
+export type EmailLog = {
+  id: string
+  from: string
+  to: string
+  subject: string
+  body: string
+  bodyHtml: string | null
+  receivedAt: string
+  status: "pending" | "matched" | "ignored"
+  matchedDealId: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type EmailLogWithDeal = EmailLog & {
+  matchedDeal?: {
+    id: string
+    title: string
+    company: string | null
+    contact: string | null
+  } | null
 }

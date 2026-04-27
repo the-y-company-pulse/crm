@@ -6,11 +6,12 @@ import LogoutButton from "./LogoutButton";
 import MobileNav from "./MobileNav";
 
 type Props = {
-  currentTab: "pipeline" | "statistik" | "foretag" | "kontakter" | "projekt";
+  currentTab: "pipeline" | "statistik" | "foretag" | "kontakter" | "projekt" | "mail-inbox";
   isAdmin?: boolean;
+  pendingEmailCount?: number;
 };
 
-export default function TopNav({ currentTab, isAdmin }: Props) {
+export default function TopNav({ currentTab, isAdmin, pendingEmailCount = 0 }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -83,6 +84,21 @@ export default function TopNav({ currentTab, isAdmin }: Props) {
           >
             Projekt
           </Link>
+          <Link
+            href="/mail-inbox"
+            className={`px-5 py-2.5 text-sm font-medium rounded-md transition-colors relative ${
+              currentTab === "mail-inbox"
+                ? "bg-white/[0.10] text-white"
+                : "text-white/50 hover:text-white/80"
+            }`}
+          >
+            Mail Inbox
+            {pendingEmailCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-neon text-ink-950 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {pendingEmailCount}
+              </span>
+            )}
+          </Link>
           {isAdmin && (
             <Link
               href="/admin"
@@ -111,6 +127,7 @@ export default function TopNav({ currentTab, isAdmin }: Props) {
         <MobileNav
           currentTab={currentTab}
           isAdmin={isAdmin}
+          pendingEmailCount={pendingEmailCount}
           onClose={() => setMobileMenuOpen(false)}
         />
       )}

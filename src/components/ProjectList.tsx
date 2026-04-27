@@ -179,7 +179,8 @@ export default function ProjectList({
               <th className="px-6 py-4 text-left text-sm font-semibold text-white/70">Status</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-white/70">Deltagare</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-white/70">Deals</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-white/70">Pris</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-white/70">Fakturerat</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-white/70">Betalt</th>
             </tr>
           </thead>
           <tbody>
@@ -216,8 +217,13 @@ export default function ProjectList({
                 <td className="px-6 py-4 text-white/60 text-sm">
                   {project._count.deals}
                 </td>
-                <td className="px-6 py-4 text-white/60 text-sm">
-                  {fmt(project.pricePerParticipant)}
+                <td className="px-6 py-4 text-right text-white/60 text-sm">
+                  {fmt(project.invoiced)}
+                </td>
+                <td className="px-6 py-4 text-right text-sm">
+                  <span className="text-neon font-medium">
+                    {fmt(project.paid)}
+                  </span>
                 </td>
               </tr>
             ))}
