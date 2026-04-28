@@ -8,6 +8,7 @@ type Props = {
     name: string
     startDate: string
     format: string | null
+    location: string | null
     maxParticipants: number
     pricePerParticipant: number
     status: "planned" | "open" | "full" | "completed"
