@@ -7,6 +7,7 @@ const UpdateProjectSchema = z.object({
   name: z.string().min(1).optional(),
   startDate: z.string().datetime().optional(),
   format: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
   maxParticipants: z.number().int().positive().optional(),
   pricePerParticipant: z.number().int().nonnegative().optional(),
   status: z.enum(["planned", "open", "full", "completed"]).optional(),
@@ -68,6 +69,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (parsed.data.name !== undefined) data.name = parsed.data.name
   if (parsed.data.startDate !== undefined) data.startDate = new Date(parsed.data.startDate)
   if (parsed.data.format !== undefined) data.format = parsed.data.format
+  if (parsed.data.location !== undefined) data.location = parsed.data.location
   if (parsed.data.maxParticipants !== undefined) data.maxParticipants = parsed.data.maxParticipants
   if (parsed.data.pricePerParticipant !== undefined) data.pricePerParticipant = parsed.data.pricePerParticipant
   if (parsed.data.status !== undefined) data.status = parsed.data.status

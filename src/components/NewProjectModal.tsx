@@ -19,6 +19,7 @@ export default function NewProjectModal({ onClose, onCreate }: Props) {
   const [name, setName] = useState("")
   const [startDate, setStartDate] = useState("")
   const [format, setFormat] = useState("")
+  const [location, setLocation] = useState("")
   const [maxParticipants, setMaxParticipants] = useState("16")
   const [pricePerParticipant, setPricePerParticipant] = useState("")
   const [status, setStatus] = useState<"planned" | "open" | "full" | "completed">("planned")
@@ -33,6 +34,7 @@ export default function NewProjectModal({ onClose, onCreate }: Props) {
         name: name.trim(),
         startDate: new Date(startDate).toISOString(),
         format: format.trim() || null,
+        location: location.trim() || null,
         maxParticipants: parseInt(maxParticipants, 10) || 16,
         pricePerParticipant: parseInt(pricePerParticipant.replace(/\D/g, ""), 10) || 0,
         status,
@@ -91,6 +93,15 @@ export default function NewProjectModal({ onClose, onCreate }: Props) {
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
                 placeholder="t.ex. 8 halvdagar under 8 veckor"
+              />
+            </Field>
+
+            <Field label="Plats">
+              <input
+                className="input"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="t.ex. Bellora Business"
               />
             </Field>
 

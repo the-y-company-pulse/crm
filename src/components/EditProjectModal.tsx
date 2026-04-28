@@ -13,6 +13,7 @@ export default function EditProjectModal({ project, onClose, onUpdate }: Props) 
   const [name, setName] = useState(project.name)
   const [startDate, setStartDate] = useState(project.startDate.split("T")[0])
   const [format, setFormat] = useState(project.format || "")
+  const [location, setLocation] = useState(project.location || "")
   const [maxParticipants, setMaxParticipants] = useState(project.maxParticipants.toString())
   const [pricePerParticipant, setPricePerParticipant] = useState(project.pricePerParticipant.toString())
   const [status, setStatus] = useState(project.status)
@@ -27,6 +28,7 @@ export default function EditProjectModal({ project, onClose, onUpdate }: Props) 
         name: name.trim(),
         startDate: new Date(startDate).toISOString(),
         format: format.trim() || null,
+        location: location.trim() || null,
         maxParticipants: parseInt(maxParticipants, 10) || 16,
         pricePerParticipant: parseInt(pricePerParticipant.replace(/\D/g, ""), 10) || 0,
         status,
@@ -84,6 +86,15 @@ export default function EditProjectModal({ project, onClose, onUpdate }: Props) 
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
                 placeholder="t.ex. 8 halvdagar under 8 veckor"
+              />
+            </Field>
+
+            <Field label="Plats">
+              <input
+                className="input"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="t.ex. Bellora Business"
               />
             </Field>
 

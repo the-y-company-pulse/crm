@@ -224,6 +224,7 @@ model Project {
   name                String
   startDate           DateTime
   format              String?  @db.Text
+  location            String?  // Physical location for sessions
   maxParticipants     Int
   pricePerParticipant Int
   status              String   @default("planned")
