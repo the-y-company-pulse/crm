@@ -21,7 +21,7 @@ export default async function AdminStagesPage() {
 
   return (
     <main className="min-h-screen">
-      <TopNav currentTab="admin" isAdmin={true} />
+      <TopNav currentTab="pipeline" isAdmin={true} />
       <div className="px-8 py-8">
         {/* Admin Navigation */}
         <div className="mb-6 flex gap-2 p-1.5 bg-white/[0.03] border border-white/[0.08] rounded-lg w-fit">
