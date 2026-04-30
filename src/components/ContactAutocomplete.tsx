@@ -36,6 +36,7 @@ export default function ContactAutocomplete({
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
+  const [isUserTyping, setIsUserTyping] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   // Fetch contact name if value is set
@@ -68,7 +69,10 @@ export default function ContactAutocomplete({
         const res = await fetch(url)
         const data = await res.json()
         setResults(data)
-        setShowDropdown(true)
+        // Only show dropdown if user is actively typing, not on initial load
+        if (isUserTyping) {
+          setShowDropdown(true)
+        }
       } catch {
         setResults([])
       } finally {
@@ -77,7 +81,7 @@ export default function ContactAutocomplete({
     }, 300) // Debounce
 
     return () => clearTimeout(timer)
-  }, [query, companyId])
+  }, [query, companyId, isUserTyping])
 
   // Click outside to close
   useEffect(() => {
@@ -130,10 +134,16 @@ export default function ContactAutocomplete({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
+            setIsUserTyping(true)
             setSelectedContact(null)
             onChange(null, null)
           }}
-          onFocus={() => query.length >= 2 && setShowDropdown(true)}
+          onFocus={() => {
+            setIsUserTyping(true)
+            if (query.length >= 2 && results.length > 0) {
+              setShowDropdown(true)
+            }
+          }}
           placeholder={placeholder}
           className="input pr-20"
         />

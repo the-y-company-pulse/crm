@@ -28,6 +28,7 @@ export default function CompanyAutocomplete({
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false)
+  const [isUserTyping, setIsUserTyping] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   // Fetch company name if value is set
@@ -56,7 +57,10 @@ export default function CompanyAutocomplete({
         const res = await fetch(`/api/companies/search?q=${encodeURIComponent(query)}`)
         const data = await res.json()
         setResults(data)
-        setShowDropdown(true)
+        // Only show dropdown if user is actively typing, not on initial load
+        if (isUserTyping) {
+          setShowDropdown(true)
+        }
       } catch {
         setResults([])
       } finally {
@@ -65,7 +69,7 @@ export default function CompanyAutocomplete({
     }, 300) // Debounce
 
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, isUserTyping])
 
   // Click outside to close
   useEffect(() => {
@@ -119,13 +123,19 @@ export default function CompanyAutocomplete({
           onChange={(e) => {
             const newQuery = e.target.value
             setQuery(newQuery)
+            setIsUserTyping(true)
             // Only reset if user is typing (different from selected company name)
             if (selectedCompany && newQuery !== selectedCompany.name) {
               setSelectedCompany(null)
               onChange(null, null)
             }
           }}
-          onFocus={() => query.length >= 2 && setShowDropdown(true)}
+          onFocus={() => {
+            setIsUserTyping(true)
+            if (query.length >= 2 && results.length > 0) {
+              setShowDropdown(true)
+            }
+          }}
           placeholder={placeholder}
           className="input pr-20"
         />
