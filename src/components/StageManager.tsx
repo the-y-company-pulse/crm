@@ -18,6 +18,18 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
   const [showNewModal, setShowNewModal] = useState(false)
   const [editingStage, setEditingStage] = useState<Stage | null>(null)
 
+  async function refreshStages() {
+    try {
+      const res = await fetch("/api/stages")
+      if (res.ok) {
+        const data = await res.json()
+        setStages(data)
+      }
+    } catch (error) {
+      console.error("Failed to refresh stages:", error)
+    }
+  }
+
   async function handleCreate(name: string) {
     const res = await fetch("/api/stages", {
       method: "POST",
@@ -26,8 +38,7 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
     })
 
     if (res.ok) {
-      const newStage = await res.json()
-      setStages([...stages, newStage])
+      await refreshStages()
       setShowNewModal(false)
     } else {
       alert("Kunde inte skapa fas")
@@ -42,8 +53,7 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
     })
 
     if (res.ok) {
-      const updated = await res.json()
-      setStages(stages.map((s) => (s.id === id ? updated : s)))
+      await refreshStages()
       setEditingStage(null)
     } else {
       alert("Kunde inte uppdatera fas")
@@ -75,10 +85,7 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
     })
 
     if (res.ok) {
-      // Reload stages to get updated order
-      const updatedRes = await fetch("/api/stages")
-      const updatedStages = await updatedRes.json()
-      setStages(updatedStages)
+      await refreshStages()
     } else {
       const data = await res.json()
       alert(data.error || "Kunde inte ta bort fas")
@@ -108,16 +115,10 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
     })
 
     if (res.ok) {
-      const updated = await res.json()
-      setStages(updated)
+      await refreshStages()
     } else {
       alert("Kunde inte ändra ordning på faser")
-      // Reload from server to reset state
-      const reloadRes = await fetch("/api/stages")
-      if (reloadRes.ok) {
-        const reloaded = await reloadRes.json()
-        setStages(reloaded)
-      }
+      await refreshStages()
     }
   }
 
