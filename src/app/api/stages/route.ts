@@ -48,6 +48,11 @@ export async function POST(req: NextRequest) {
       order: newOrder,
       status: null,
     },
+    include: {
+      _count: {
+        select: { deals: true },
+      },
+    },
   })
 
   return NextResponse.json(stage, { status: 201 })

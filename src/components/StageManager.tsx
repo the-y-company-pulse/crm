@@ -29,6 +29,8 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
       const newStage = await res.json()
       setStages([...stages, newStage])
       setShowNewModal(false)
+    } else {
+      alert("Kunde inte skapa fas")
     }
   }
 
@@ -43,6 +45,8 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
       const updated = await res.json()
       setStages(stages.map((s) => (s.id === id ? updated : s)))
       setEditingStage(null)
+    } else {
+      alert("Kunde inte uppdatera fas")
     }
   }
 
@@ -106,6 +110,14 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
     if (res.ok) {
       const updated = await res.json()
       setStages(updated)
+    } else {
+      alert("Kunde inte ändra ordning på faser")
+      // Reload from server to reset state
+      const reloadRes = await fetch("/api/stages")
+      if (reloadRes.ok) {
+        const reloaded = await reloadRes.json()
+        setStages(reloaded)
+      }
     }
   }
 

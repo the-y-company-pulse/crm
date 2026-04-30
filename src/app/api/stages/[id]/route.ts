@@ -28,6 +28,11 @@ export async function PATCH(
   const stage = await prisma.stage.update({
     where: { id },
     data,
+    include: {
+      _count: {
+        select: { deals: true },
+      },
+    },
   })
 
   return NextResponse.json(stage)
