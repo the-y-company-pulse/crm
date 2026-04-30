@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import AddUserModal from "./AddUserModal"
 
 type User = {
@@ -42,6 +43,22 @@ export default function AdminDashboard({
 
   return (
     <div className="px-8 py-8">
+      {/* Admin Navigation */}
+      <div className="mb-6 flex gap-2 p-1.5 bg-white/[0.03] border border-white/[0.08] rounded-lg w-fit">
+        <Link
+          href="/admin"
+          className="px-5 py-2.5 text-sm font-medium rounded-md transition-colors bg-white/[0.10] text-white"
+        >
+          Användare
+        </Link>
+        <Link
+          href="/admin/stages"
+          className="px-5 py-2.5 text-sm font-medium rounded-md transition-colors text-white/50 hover:text-white/80"
+        >
+          Faser
+        </Link>
+      </div>
+
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-display text-3xl text-white">Användarhantering</h1>
         <button onClick={() => setShowAddUser(true)} className="btn btn-primary">
