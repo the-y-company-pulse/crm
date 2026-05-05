@@ -19,24 +19,24 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    // Use transaction to update all stages atomically
-    // First set all to temporary negative values to avoid unique constraint conflicts
-    await prisma.$transaction([
-      // Step 1: Set all to temporary negative values
-      ...parsed.data.stageIds.map((id, index) =>
-        prisma.stage.update({
-          where: { id },
-          data: { order: -(index + 1) },
+    // Use transaction with callback to update in two phases
+    await prisma.$transaction(async (tx) => {
+      // Phase 1: Set all to temporary high values (1000+) to avoid conflicts
+      for (let i = 0; i < parsed.data.stageIds.length; i++) {
+        await tx.stage.update({
+          where: { id: parsed.data.stageIds[i] },
+          data: { order: 1000 + i },
         })
-      ),
-      // Step 2: Set to final positive values
-      ...parsed.data.stageIds.map((id, index) =>
-        prisma.stage.update({
-          where: { id },
-          data: { order: index + 1 },
+      }
+
+      // Phase 2: Set to final correct values (1, 2, 3...)
+      for (let i = 0; i < parsed.data.stageIds.length; i++) {
+        await tx.stage.update({
+          where: { id: parsed.data.stageIds[i] },
+          data: { order: i + 1 },
         })
-      ),
-    ])
+      }
+    })
 
     const stages = await prisma.stage.findMany({
       orderBy: { order: "asc" },
