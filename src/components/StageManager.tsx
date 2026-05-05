@@ -125,15 +125,26 @@ export default function StageManager({ stages: initialStages }: { stages: Stage[
 
     // Send to server
     const stageIds = reorderedStages.map((s) => s.id)
-    const res = await fetch("/api/stages/reorder", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stageIds }),
-    })
+    try {
+      const res = await fetch("/api/stages/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stageIds }),
+      })
 
-    if (!res.ok) {
+      if (!res.ok) {
+        const errorData = await res.text()
+        console.error("Reorder failed:", res.status, errorData)
+        alert("Kunde inte ändra ordning på faser")
+        await refreshStages() // Revert on error
+      } else {
+        // Success - refresh to ensure we have latest data
+        await refreshStages()
+      }
+    } catch (error) {
+      console.error("Reorder error:", error)
       alert("Kunde inte ändra ordning på faser")
-      await refreshStages() // Revert on error
+      await refreshStages()
     }
   }
 
