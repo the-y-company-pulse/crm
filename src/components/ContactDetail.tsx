@@ -107,17 +107,17 @@ export default function ContactDetail({
   }
 
   return (
-    <div className="px-8 py-8">
-      <div className="mb-8">
+    <div className="px-4 md:px-8 py-4 md:py-8">
+      <div className="mb-6 md:mb-8">
         <Link
           href="/kontakter"
           className="text-white/40 hover:text-white text-sm mb-4 inline-flex items-center gap-2"
         >
           ← Tillbaka till kontakter
         </Link>
-        <div className="flex items-start justify-between mt-4">
-          <div>
-            <h1 className="font-display text-3xl text-white mb-2">{contact.fullName}</h1>
+        <div className="flex flex-col md:flex-row md:items-start justify-between mt-4 gap-4">
+          <div className="flex-1">
+            <h1 className="font-display text-2xl md:text-3xl text-white mb-2">{contact.fullName}</h1>
             <div className="text-white/40 text-sm space-y-1">
               {contact.title && <div>{contact.title}</div>}
               {contact.company && (
@@ -134,18 +134,18 @@ export default function ContactDetail({
             </div>
           </div>
           {!isEditing ? (
-            <button onClick={() => setIsEditing(true)} className="btn">
+            <button onClick={() => setIsEditing(true)} className="btn w-full md:w-auto">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               Redigera
             </button>
           ) : (
-            <div className="flex gap-2">
-              <button onClick={handleCancel} className="btn">
+            <div className="flex gap-2 w-full md:w-auto">
+              <button onClick={handleCancel} className="btn flex-1 md:flex-initial">
                 Avbryt
               </button>
-              <button onClick={handleSave} className="btn-primary">
+              <button onClick={handleSave} className="btn-primary flex-1 md:flex-initial">
                 Spara
               </button>
             </div>
@@ -153,7 +153,7 @@ export default function ContactDetail({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-8">
         <div className="glass rounded-xl p-6">
           <div className="text-white/40 text-sm mb-2">Totalt värde</div>
           <div className="text-2xl font-bold text-white">
@@ -177,7 +177,7 @@ export default function ContactDetail({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <div className="glass rounded-xl p-6">
           <h2 className="font-display text-xl text-white mb-4">Kontaktinformation</h2>
           {isEditing ? (
