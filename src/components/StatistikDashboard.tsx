@@ -103,7 +103,7 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
             onChange={(e) => setUserId(e.target.value)}
             className="input py-1.5 text-xs w-auto"
           >
-            <option value="all" className="bg-ink-900">Alla partnerer</option>
+            <option value="all" className="bg-ink-900">Alla partners</option>
             {users.map((u) => (
               <option key={u.id} value={u.id} className="bg-ink-900">{u.name}</option>
             ))}
