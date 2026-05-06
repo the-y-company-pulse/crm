@@ -121,19 +121,47 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
           <div className="flex items-start justify-between gap-4 mb-4 md:mb-0">
             <div className="flex-1 min-w-0 order-2 md:order-1">
               <h2 className="font-display text-xl md:text-2xl text-white leading-tight">{deal.title}</h2>
-              <p className="text-sm md:text-base text-white/50 mt-1 md:mt-2">
-              {[
-                (deal as any).company_rel?.name || deal.company,
-                (deal as any).contact_rel?.fullName || deal.contact
-              ].filter(Boolean).join(" · ")}
-            </p>
+              <div className="text-sm md:text-base text-white/50 mt-1 md:mt-2 flex flex-wrap items-center gap-2">
+                {(deal as any).company_rel ? (
+                  <Link
+                    href={`/foretag/${(deal as any).company_rel.id}`}
+                    className="hover:text-neon transition"
+                  >
+                    {(deal as any).company_rel.name}
+                  </Link>
+                ) : deal.company ? (
+                  <span>{deal.company}</span>
+                ) : null}
+                {((deal as any).company_rel?.name || deal.company) && ((deal as any).contact_rel?.fullName || deal.contact) && (
+                  <span>·</span>
+                )}
+                {(deal as any).contact_rel?.fullName || deal.contact}
+              </div>
             {((deal as any).contact_rel?.email || (deal as any).contact_rel?.phone || deal.email || deal.phone) && (
-              <p className="text-sm text-white/35 mt-1.5">
-                {[
-                  (deal as any).contact_rel?.email || deal.email,
-                  (deal as any).contact_rel?.phone || deal.phone
-                ].filter(Boolean).join(" · ")}
-              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                {((deal as any).contact_rel?.email || deal.email) && (
+                  <a
+                    href={`mailto:${(deal as any).contact_rel?.email || deal.email}`}
+                    className="text-sm text-white/50 hover:text-neon transition flex items-center gap-1.5 touch-target"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    {(deal as any).contact_rel?.email || deal.email}
+                  </a>
+                )}
+                {((deal as any).contact_rel?.phone || deal.phone) && (
+                  <a
+                    href={`tel:${(deal as any).contact_rel?.phone || deal.phone}`}
+                    className="text-sm text-white/50 hover:text-neon transition flex items-center gap-1.5 touch-target"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    {(deal as any).contact_rel?.phone || deal.phone}
+                  </a>
+                )}
+              </div>
             )}
             <p className="text-lg md:text-xl font-medium text-neon mt-2 md:mt-4">{fmt(deal.value)}</p>
 
