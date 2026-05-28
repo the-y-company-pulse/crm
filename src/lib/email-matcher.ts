@@ -1,83 +1,121 @@
 import { prisma } from "./prisma"
 import { extractDomain } from "./email-parser"
 
-export async function matchEmailToDeal(
-  senderEmail: string,
-  subject: string,
-  body: string
-): Promise<{ id: string; ownerId: string } | null> {
-  const domain = extractDomain(senderEmail)
+export type RankedDeal = {
+  dealId: string
+  ownerId: string
+  title: string
+  company: string | null
+  score: number
+  reason: string
+}
 
-  // Strategy 1: Direct contact email match
-  const contactMatch = await prisma.contact.findFirst({
-    where: {
-      email: {
-        equals: senderEmail,
-        mode: "insensitive",
-      },
-    },
-    include: {
+type ScoringDeal = {
+  id: string
+  ownerId: string
+  title: string
+  email: string | null
+  updatedAt: Date
+  company: string | null
+  contact_rel: { email: string | null } | null
+  company_rel: { name: string; website: string | null } | null
+}
+
+const AUTO_MATCH_THRESHOLD = 90
+
+export async function loadOpenDealsForScoring(): Promise<ScoringDeal[]> {
+  return prisma.deal.findMany({
+    where: { status: "open" },
+    select: {
+      id: true,
+      ownerId: true,
+      title: true,
+      email: true,
+      updatedAt: true,
       company: true,
+      contact_rel: { select: { email: true } },
+      company_rel: { select: { name: true, website: true } },
     },
   })
+}
 
-  if (contactMatch) {
-    // Find most recent open deal for this contact
-    const deal = await prisma.deal.findFirst({
-      where: {
-        OR: [
-          { contactId: contactMatch.id },
-          { companyId: contactMatch.company?.id },
-        ],
-        status: "open",
-      },
-      orderBy: { updatedAt: "desc" },
-      select: { id: true, ownerId: true },
-    })
+export function scoreDealsAgainstLoaded(
+  senderEmail: string,
+  subject: string,
+  openDeals: ScoringDeal[]
+): RankedDeal[] {
+  const senderLower = senderEmail.toLowerCase()
+  const domain = extractDomain(senderEmail)
+  const subjectLower = subject?.toLowerCase() ?? ""
+  const now = Date.now()
+  const ranked: RankedDeal[] = []
 
-    if (deal) return deal
-  }
+  for (const deal of openDeals) {
+    let score = 0
+    const reasons: string[] = []
 
-  // Strategy 2: Company domain match
-  if (domain) {
-    const company = await prisma.company.findFirst({
-      where: {
-        OR: [
-          { website: { contains: domain, mode: "insensitive" } },
-          { nameNorm: { contains: domain.split(".")[0], mode: "insensitive" } },
-        ],
-      },
-    })
+    const contactEmail = deal.contact_rel?.email?.toLowerCase()
+    if (contactEmail && contactEmail === senderLower) {
+      score += 100
+      reasons.push("kontaktens e-post")
+    }
 
-    if (company) {
-      const deal = await prisma.deal.findFirst({
-        where: {
-          companyId: company.id,
-          status: "open",
-        },
-        orderBy: { updatedAt: "desc" },
-        select: { id: true, ownerId: true },
+    const dealEmail = deal.email?.toLowerCase()
+    if (dealEmail && dealEmail === senderLower) {
+      score += 90
+      reasons.push("affärens e-post")
+    }
+
+    if (domain && deal.company_rel?.website) {
+      const website = deal.company_rel.website.toLowerCase()
+      if (website.includes(domain)) {
+        score += 50
+        reasons.push("företagets domän")
+      }
+    }
+
+    const titleLower = deal.title.toLowerCase().trim()
+    if (titleLower.length >= 4 && subjectLower.includes(titleLower)) {
+      score += 40
+      reasons.push("titel i ämnesrad")
+    }
+
+    if (score > 0) {
+      const ageMs = now - new Date(deal.updatedAt).getTime()
+      if (ageMs < 14 * 24 * 60 * 60 * 1000) score += 10
+
+      ranked.push({
+        dealId: deal.id,
+        ownerId: deal.ownerId,
+        title: deal.title,
+        company: deal.company_rel?.name ?? deal.company ?? null,
+        score,
+        reason: reasons.join(" + "),
       })
-
-      if (deal) return deal
     }
   }
 
-  // Strategy 3: Subject/body keyword match (basic)
-  // Look for project names or deal titles in subject
-  if (subject) {
-    const deal = await prisma.deal.findFirst({
-      where: {
-        title: { contains: subject, mode: "insensitive" },
-        status: "open",
-      },
-      orderBy: { updatedAt: "desc" },
-      select: { id: true, ownerId: true },
-    })
+  ranked.sort((a, b) => b.score - a.score)
+  return ranked
+}
 
-    if (deal) return deal
+export async function scoreDealsForEmail(
+  senderEmail: string,
+  subject: string
+): Promise<RankedDeal[]> {
+  const deals = await loadOpenDealsForScoring()
+  return scoreDealsAgainstLoaded(senderEmail, subject, deals)
+}
+
+export async function matchEmailToDeal(
+  senderEmail: string,
+  subject: string,
+  _body: string
+): Promise<{ id: string; ownerId: string } | null> {
+  const ranked = await scoreDealsForEmail(senderEmail, subject)
+  const top = ranked[0]
+  if (top && top.score >= AUTO_MATCH_THRESHOLD) {
+    return { id: top.dealId, ownerId: top.ownerId }
   }
-
-  // No match found
   return null
 }

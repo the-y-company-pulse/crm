@@ -38,6 +38,7 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
   const [showLost, setShowLost] = useState(false);
   const [showWon, setShowWon] = useState(true); // Always show won by default
   const [showAllWonMobile, setShowAllWonMobile] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // State för mobil single-column view
   const visibleStages = stages.filter((s) => {
@@ -155,26 +156,45 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
   const visibleDeals = ownerFilter === "all" ? deals : deals.filter((d) => d.ownerId === ownerFilter);
   const selectedDeal = deals.find((d) => d.id === selectedDealId) ?? null;
 
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const matchesSearch = (deal: Deal): boolean => {
+    if (!trimmedQuery) return true;
+    const companyName = (deal as any).company_rel?.name || deal.company || "";
+    const contactName = (deal as any).contact_rel?.fullName || deal.contact || "";
+    const haystack = [deal.title, companyName, contactName, deal.email ?? ""]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(trimmedQuery);
+  };
+  const searchActive = trimmedQuery.length > 0;
+
   // Only count deals in visible stages for pipeline metrics
   const visibleStageIds = new Set(visibleStages.map((s) => s.id));
   const pipelineDeals = visibleDeals.filter((d) => visibleStageIds.has(d.stageId));
 
   // Mobile view
   if (isMobile) {
-    let dealsInStage = visibleDeals.filter((d) => d.stageId === selectedMobileStage);
     const selectedStage = stages.find((s) => s.id === selectedMobileStage);
     const isWonStage = selectedStage?.status === "won";
 
-    // For won stage on mobile, limit to 10 most recent
-    const INITIAL_LIMIT = 10;
+    // When searching, show all matching deals across stages (ignore selected stage)
+    let dealsInStage = searchActive
+      ? visibleDeals.filter((d) => visibleStageIds.has(d.stageId) && matchesSearch(d))
+      : visibleDeals.filter((d) => d.stageId === selectedMobileStage);
+
+    // Stage collapse only applies when not searching
+    const STAGE_LIMIT = 8;
     let hasMoreWon = false;
-    if (isWonStage && dealsInStage.length > INITIAL_LIMIT && !showAllWonMobile) {
+    if (!searchActive && dealsInStage.length > STAGE_LIMIT && !showAllWonMobile) {
       const sorted = [...dealsInStage].sort((a, b) => {
-        const dateA = a.wonAt ? new Date(a.wonAt).getTime() : 0;
-        const dateB = b.wonAt ? new Date(b.wonAt).getTime() : 0;
-        return dateB - dateA;
+        if (isWonStage) {
+          const dateA = a.wonAt ? new Date(a.wonAt).getTime() : 0;
+          const dateB = b.wonAt ? new Date(b.wonAt).getTime() : 0;
+          return dateB - dateA;
+        }
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
       });
-      dealsInStage = sorted.slice(0, INITIAL_LIMIT);
+      dealsInStage = sorted.slice(0, STAGE_LIMIT);
       hasMoreWon = true;
     }
 
@@ -197,22 +217,31 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
           onToggleLost={() => setShowLost(!showLost)}
           showWon={showWon}
           onToggleWon={() => setShowWon(!showWon)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
-        <MobileStageSelector
-          stages={stagesWithCounts}
-          selectedStageId={selectedMobileStage}
-          onChange={(id) => {
-            setSelectedMobileStage(id);
-            setShowAllWonMobile(false); // Reset when switching stage
-          }}
-        />
+        {!searchActive && (
+          <MobileStageSelector
+            stages={stagesWithCounts}
+            selectedStageId={selectedMobileStage}
+            onChange={(id) => {
+              setSelectedMobileStage(id);
+              setShowAllWonMobile(false); // Reset when switching stage
+            }}
+          />
+        )}
 
         {/* Single column of cards */}
         <div className="flex-1 px-4 py-4 flex flex-col gap-3 overflow-y-auto">
+          {searchActive && (
+            <p className="text-xs text-white/40 px-1">
+              {dealsInStage.length} träff{dealsInStage.length === 1 ? "" : "ar"} för "{searchQuery}"
+            </p>
+          )}
           {dealsInStage.length === 0 ? (
             <p className="text-white/40 text-center py-12 text-sm">
-              Inga affärer i denna fas
+              {searchActive ? "Inga affärer matchar sökningen" : "Inga affärer i denna fas"}
             </p>
           ) : (
             <>
@@ -223,6 +252,7 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
                   onOpen={() => setSelectedDealId(deal.id)}
                   onMove={handleMoveDeal}
                   stages={visibleStages}
+                  isSearchHit={searchActive}
                 />
               ))}
               {hasMoreWon && (
@@ -275,6 +305,8 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
         onToggleLost={() => setShowLost(!showLost)}
         showWon={showWon}
         onToggleWon={() => setShowWon(!showWon)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <DndContext
@@ -294,6 +326,8 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
                   deals={stageDeals}
                   onCardClick={(id) => setSelectedDealId(id)}
                   selectedDealId={selectedDealId}
+                  matchesSearch={matchesSearch}
+                  searchActive={searchActive}
                 />
               );
             })}

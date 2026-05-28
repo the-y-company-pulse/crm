@@ -4,14 +4,22 @@ import { useState } from "react"
 import type { EmailLog } from "@/lib/types"
 import DealAutocomplete from "./DealAutocomplete"
 
-export default function MailInbox({ emails: initialEmails }: { emails: EmailLog[] }) {
+type Suggestion = {
+  dealId: string
+  title: string
+  company: string | null
+  reason: string
+}
+
+type EmailWithSuggestions = EmailLog & {
+  suggestions?: Suggestion[]
+}
+
+export default function MailInbox({ emails: initialEmails }: { emails: EmailWithSuggestions[] }) {
   const [emails, setEmails] = useState(initialEmails)
   const [selectedDealId, setSelectedDealId] = useState<Record<string, string | null>>({})
 
-  async function handleMatch(emailId: string) {
-    const dealId = selectedDealId[emailId]
-    if (!dealId) return
-
+  async function matchTo(emailId: string, dealId: string) {
     const res = await fetch(`/api/email-logs/${emailId}/match`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -21,6 +29,12 @@ export default function MailInbox({ emails: initialEmails }: { emails: EmailLog[
     if (res.ok) {
       setEmails(emails.filter((e) => e.id !== emailId))
     }
+  }
+
+  async function handleMatchFromAutocomplete(emailId: string) {
+    const dealId = selectedDealId[emailId]
+    if (!dealId) return
+    await matchTo(emailId, dealId)
   }
 
   async function handleIgnore(emailId: string) {
@@ -62,16 +76,45 @@ export default function MailInbox({ emails: initialEmails }: { emails: EmailLog[
                 {email.body.length > 500 && "..."}
               </div>
 
+              {email.suggestions && email.suggestions.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-xs text-white/40 uppercase tracking-wider mb-2">
+                    Föreslagna deals
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {email.suggestions.map((s) => (
+                      <button
+                        key={s.dealId}
+                        onClick={() => matchTo(email.id, s.dealId)}
+                        className="text-left bg-neon/5 hover:bg-neon/10 border border-neon/20 hover:border-neon/40 rounded-lg px-4 py-3 transition-colors group"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white font-medium truncate">{s.title}</div>
+                            <div className="text-white/40 text-xs mt-0.5 truncate">
+                              {s.company ? `${s.company} · ` : ""}matchad på {s.reason}
+                            </div>
+                          </div>
+                          <span className="text-neon text-sm font-medium whitespace-nowrap group-hover:text-neon">
+                            Matcha →
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <div className="flex-1">
                   <DealAutocomplete
                     value={selectedDealId[email.id] || null}
                     onChange={(id) => setSelectedDealId({ ...selectedDealId, [email.id]: id })}
-                    placeholder="Välj deal..."
+                    placeholder="Eller sök annan deal..."
                   />
                 </div>
                 <button
-                  onClick={() => handleMatch(email.id)}
+                  onClick={() => handleMatchFromAutocomplete(email.id)}
                   disabled={!selectedDealId[email.id]}
                   className="btn btn-primary disabled:opacity-40"
                 >

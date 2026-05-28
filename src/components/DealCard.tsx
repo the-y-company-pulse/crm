@@ -9,9 +9,11 @@ type Props = {
   isSelected?: boolean;
   isOverlay?: boolean;
   onClick?: () => void;
+  isSearchHit?: boolean;
+  isSearchDim?: boolean;
 };
 
-export default function DealCard({ deal, isSelected, isOverlay, onClick }: Props) {
+export default function DealCard({ deal, isSelected, isOverlay, onClick, isSearchHit, isSearchDim }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: deal.id,
     disabled: isOverlay,
@@ -44,6 +46,8 @@ export default function DealCard({ deal, isSelected, isOverlay, onClick }: Props
         isDragging ? "is-dragging" : "",
         isSelected ? "is-selected" : "",
         isOverlay ? "shadow-2xl rotate-1" : "",
+        isSearchHit ? "is-search-hit" : "",
+        isSearchDim ? "is-search-dim" : "",
       ].join(" ")}
     >
       <div className="text-base font-semibold text-white leading-snug mb-1.5">

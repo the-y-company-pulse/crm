@@ -48,6 +48,13 @@
   .y-card.is-dragging { @apply opacity-40; }
   .y-card.is-selected { box-shadow: 0 0 0 2px #deff00; }
 
+  .is-search-hit {
+    box-shadow: 0 0 0 2px #deff00, 0 0 20px rgba(222, 255, 0, 0.4);
+    border-color: rgba(222, 255, 0, 0.6) !important;
+  }
+  .is-search-dim { opacity: 0.25; }
+  .is-search-dim:hover { opacity: 0.6; }
+
   /* Kanban column */
   .y-col {
     @apply rounded-xl p-4 min-h-[400px] flex flex-col border border-white/[0.10];

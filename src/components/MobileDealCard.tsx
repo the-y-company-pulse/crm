@@ -7,9 +7,11 @@ type Props = {
   onOpen: () => void;
   onMove: (dealId: string, newStageId: string) => Promise<void>;
   stages: Stage[];
+  isSearchHit?: boolean;
+  isSearchDim?: boolean;
 };
 
-export default function MobileDealCard({ deal, onOpen, onMove, stages }: Props) {
+export default function MobileDealCard({ deal, onOpen, onMove, stages, isSearchHit, isSearchDim }: Props) {
   const currentStageIndex = stages.findIndex(s => s.id === deal.stageId);
   const prevStage = stages[currentStageIndex - 1];
   const nextStage = stages[currentStageIndex + 1];
@@ -22,7 +24,11 @@ export default function MobileDealCard({ deal, onOpen, onMove, stages }: Props) 
 
   return (
     <div
-      className="bg-navy/80 border border-white/[0.15] rounded-lg p-4 transition-all hover:bg-navy"
+      className={[
+        "bg-navy/80 border border-white/[0.15] rounded-lg p-4 transition-all hover:bg-navy",
+        isSearchHit ? "is-search-hit" : "",
+        isSearchDim ? "is-search-dim" : "",
+      ].join(" ")}
       style={{ borderLeftColor: deal.owner?.color || '#888', borderLeftWidth: '4px' }}
     >
       {/* Card content - klickbar för att öppna */}

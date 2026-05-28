@@ -14,6 +14,8 @@ type Props = {
   onToggleLost: () => void;
   showWon: boolean;
   onToggleWon: () => void;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
 };
 
 export default function Toolbar({
@@ -27,6 +29,8 @@ export default function Toolbar({
   onToggleLost,
   showWon,
   onToggleWon,
+  searchQuery,
+  onSearchChange,
 }: Props) {
   const isMobile = useIsMobile();
   const fmt = (v: number) => v.toLocaleString("sv-SE") + " SEK";
@@ -46,6 +50,31 @@ export default function Toolbar({
 
           {/* Filters - wrappas på mobil */}
           <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+            {/* Search */}
+            <div className="relative">
+              <svg className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Sök affär..."
+                className="bg-white/[0.03] border border-white/[0.08] rounded-lg pl-9 pr-8 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-neon/40 w-48 md:w-64"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => onSearchChange("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                  aria-label="Rensa sökning"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
             {/* Owner filters */}
             <div className="flex items-center gap-1 md:gap-2 bg-white/[0.03] border border-white/[0.08] rounded-lg p-1 md:p-1.5">
               <button

@@ -10,9 +10,20 @@ type Props = {
   deals: Deal[];
   selectedDealId: string | null;
   onCardClick: (id: string) => void;
+  matchesSearch?: (deal: Deal) => boolean;
+  searchActive?: boolean;
 };
 
-export default function StageColumn({ stage, deals, selectedDealId, onCardClick }: Props) {
+const COLLAPSE_LIMIT = 8;
+
+export default function StageColumn({
+  stage,
+  deals,
+  selectedDealId,
+  onCardClick,
+  matchesSearch,
+  searchActive,
+}: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   const [showAll, setShowAll] = useState(false);
 
@@ -23,19 +34,20 @@ export default function StageColumn({ stage, deals, selectedDealId, onCardClick 
   const isTerminal = stage.status === "won" || stage.status === "lost";
   const isWon = stage.status === "won";
 
-  // For won stage, show only 10 most recent unless "show all" is clicked
-  const INITIAL_LIMIT = 10;
+  // Decide sort + limit based on stage type
+  const limit = COLLAPSE_LIMIT;
+  const sortKey = (d: Deal): number => {
+    if (isWon) return d.wonAt ? new Date(d.wonAt).getTime() : 0;
+    return new Date(d.updatedAt).getTime();
+  };
+
+  // When search is active, skip collapse entirely so hits aren't hidden
   let visibleDeals = deals;
   let hasMore = false;
 
-  if (isWon && deals.length > INITIAL_LIMIT && !showAll) {
-    // Sort by wonAt desc and take first 10
-    const sorted = [...deals].sort((a, b) => {
-      const dateA = a.wonAt ? new Date(a.wonAt).getTime() : 0;
-      const dateB = b.wonAt ? new Date(b.wonAt).getTime() : 0;
-      return dateB - dateA;
-    });
-    visibleDeals = sorted.slice(0, INITIAL_LIMIT);
+  if (!searchActive && deals.length > limit && !showAll) {
+    const sorted = [...deals].sort((a, b) => sortKey(b) - sortKey(a));
+    visibleDeals = sorted.slice(0, limit);
     hasMore = true;
   }
 
@@ -80,14 +92,20 @@ export default function StageColumn({ stage, deals, selectedDealId, onCardClick 
           <div className="text-sm text-white/20 text-center py-6">Tomt</div>
         ) : (
           <>
-            {visibleDeals.map((deal) => (
-              <DealCard
-                key={deal.id}
-                deal={deal}
-                isSelected={deal.id === selectedDealId}
-                onClick={() => onCardClick(deal.id)}
-              />
-            ))}
+            {visibleDeals.map((deal) => {
+              const isHit = searchActive && matchesSearch ? matchesSearch(deal) : false;
+              const isMiss = searchActive && matchesSearch ? !matchesSearch(deal) : false;
+              return (
+                <DealCard
+                  key={deal.id}
+                  deal={deal}
+                  isSelected={deal.id === selectedDealId}
+                  onClick={() => onCardClick(deal.id)}
+                  isSearchHit={isHit}
+                  isSearchDim={isMiss}
+                />
+              );
+            })}
             {hasMore && (
               <button
                 onClick={() => setShowAll(true)}
