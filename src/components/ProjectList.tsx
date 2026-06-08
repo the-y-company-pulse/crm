@@ -40,6 +40,22 @@ export default function ProjectList({
     setShowNewModal(false)
   }
 
+  async function handleDelete(e: React.MouseEvent, project: ProjectWithStats) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm(`Är du säker på att du vill ta bort projektet "${project.name}"? Detta går inte att ångra.`)) return
+    const prev = projects
+    setProjects(projects.filter((p) => p.id !== project.id))
+    try {
+      const res = await fetch(`/api/projects/${project.id}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to delete")
+    } catch (err) {
+      console.error("Failed to delete:", err)
+      alert("Kunde inte ta bort projektet")
+      setProjects(prev)
+    }
+  }
+
   // Mobile card view
   if (isMobile) {
     return (
@@ -93,6 +109,13 @@ export default function ProjectList({
                 >
                   {PROJECT_STATUS_LABELS[project.status]}
                 </span>
+                <button
+                  onClick={(e) => handleDelete(e, project)}
+                  className="touch-target px-2 py-1 text-xs rounded text-white/40 hover:bg-red-600/20 hover:text-red-400 transition-colors"
+                  aria-label="Ta bort projekt"
+                >
+                  🗑
+                </button>
               </div>
               <p className="text-sm text-white/60 mb-3">
                 {new Date(project.startDate).toLocaleDateString("sv-SE", {
@@ -181,6 +204,7 @@ export default function ProjectList({
               <th className="px-6 py-4 text-left text-sm font-semibold text-white/70">Deals</th>
               <th className="px-6 py-4 text-right text-sm font-semibold text-white/70">Fakturerat</th>
               <th className="px-6 py-4 text-right text-sm font-semibold text-white/70">Betalt</th>
+              <th className="px-6 py-4 text-right text-sm font-semibold text-white/70"></th>
             </tr>
           </thead>
           <tbody>
@@ -224,6 +248,15 @@ export default function ProjectList({
                   <span className="text-neon font-medium">
                     {fmt(project.paid)}
                   </span>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button
+                    onClick={(e) => handleDelete(e, project)}
+                    className="px-2 py-1 text-xs rounded text-white/40 hover:bg-red-600/20 hover:text-red-400 transition-colors"
+                    aria-label="Ta bort projekt"
+                  >
+                    🗑 Ta bort
+                  </button>
                 </td>
               </tr>
             ))}
