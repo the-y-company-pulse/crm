@@ -16,7 +16,7 @@ export default function ReminderBadge({ reminderAt, reminderNote, size = "sm" }:
 
   const styles: Record<"upcoming" | "today" | "overdue", string> = {
     upcoming: "bg-white/[0.06] text-white/55 border-white/[0.10]",
-    today: "bg-neon/15 text-neon border-neon/30",
+    today: "bg-red-600/20 text-red-400 border-red-600/40",
     overdue: "bg-red-600/20 text-red-400 border-red-600/40 reminder-overdue",
   };
 
