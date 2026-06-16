@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Deal, User, Activity } from "@/lib/types";
-import { ACTIVITY_LABELS, ACTIVITY_COLORS, PROJECT_STATUS_LABELS } from "@/lib/types";
+import { ACTIVITY_LABELS, ACTIVITY_COLORS, PROJECT_STATUS_LABELS, reminderStatus, formatReminderDate, reminderDateInputValue } from "@/lib/types";
 import EditDealModal from "./EditDealModal";
+import ReminderBadge from "./ReminderBadge";
 
 type Props = {
   deal: Deal;
@@ -23,6 +24,12 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
   const [submitting, setSubmitting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [collapsedActivities, setCollapsedActivities] = useState<Set<string>>(new Set());
+
+  // Reminder / planned activity editing state
+  const [editingReminder, setEditingReminder] = useState(false);
+  const [reminderDate, setReminderDate] = useState(() => reminderDateInputValue(deal.reminderAt));
+  const [reminderNoteText, setReminderNoteText] = useState(deal.reminderNote ?? "");
+  const [savingReminder, setSavingReminder] = useState(false);
 
   const fmt = (v: number) => v.toLocaleString("sv-SE") + " SEK";
   const ownerColor = deal.owner?.color ?? "#888";
@@ -107,6 +114,35 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
     }
   }
 
+  async function saveReminder(dateStr: string, note: string) {
+    setSavingReminder(true);
+    try {
+      const res = await fetch(`/api/deals/${deal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reminderAt: dateStr || null,
+          reminderNote: dateStr ? note.trim() || null : null,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update reminder");
+      const updated: Deal = await res.json();
+      onDealUpdate(updated);
+      setEditingReminder(false);
+    } catch (err) {
+      console.error("Failed to save reminder:", err);
+      alert("Kunde inte spara påminnelsen");
+    } finally {
+      setSavingReminder(false);
+    }
+  }
+
+  function startEditReminder() {
+    setReminderDate(reminderDateInputValue(deal.reminderAt));
+    setReminderNoteText(deal.reminderNote ?? "");
+    setEditingReminder(true);
+  }
+
   return (
     <>
       <div
@@ -179,6 +215,76 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
                 </div>
               </div>
             )}
+
+            {/* Planned activity / reminder */}
+            <div className="mt-4 p-3 rounded-lg bg-white/[0.03] border border-white/[0.08]">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="text-xs text-white/40">Planerad aktivitet</div>
+                {!editingReminder && (
+                  <button
+                    onClick={startEditReminder}
+                    className="text-xs text-white/50 hover:text-neon transition touch-target px-2 py-1 rounded hover:bg-white/[0.05]"
+                  >
+                    {deal.reminderAt ? "Ändra" : "+ Lägg till"}
+                  </button>
+                )}
+              </div>
+
+              {editingReminder ? (
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="date"
+                    value={reminderDate}
+                    onChange={(e) => setReminderDate(e.target.value)}
+                    className="input text-sm [color-scheme:dark]"
+                  />
+                  <input
+                    type="text"
+                    value={reminderNoteText}
+                    onChange={(e) => setReminderNoteText(e.target.value)}
+                    placeholder="Vad ska göras? T.ex. 'Ring – satt illa till'"
+                    className="input text-sm"
+                    onKeyDown={(e) => { if (e.key === "Enter" && reminderDate) saveReminder(reminderDate, reminderNoteText); }}
+                  />
+                  <div className="flex items-center gap-2 mt-1">
+                    <button
+                      onClick={() => saveReminder(reminderDate, reminderNoteText)}
+                      disabled={!reminderDate || savingReminder}
+                      className="btn btn-primary disabled:opacity-40 touch-target px-3 py-1.5 text-sm"
+                    >
+                      Spara
+                    </button>
+                    <button
+                      onClick={() => setEditingReminder(false)}
+                      className="touch-target px-3 py-1.5 text-sm text-white/50 hover:text-white/80 transition"
+                    >
+                      Avbryt
+                    </button>
+                    {deal.reminderAt && (
+                      <button
+                        onClick={() => saveReminder("", "")}
+                        disabled={savingReminder}
+                        className="touch-target px-3 py-1.5 text-sm text-red-400/80 hover:text-red-400 transition ml-auto"
+                      >
+                        Ta bort
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : deal.reminderAt ? (
+                <div className="flex flex-col gap-1.5">
+                  <ReminderBadge reminderAt={deal.reminderAt} reminderNote={deal.reminderNote} size="md" />
+                  {deal.reminderNote && (
+                    <div className="text-sm text-white/70">{deal.reminderNote}</div>
+                  )}
+                  {reminderStatus(deal.reminderAt) === "overdue" && (
+                    <div className="text-xs text-red-400/80">Datumet har passerat ({formatReminderDate(deal.reminderAt)})</div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-sm text-white/30">Ingen planerad aktivitet.</div>
+              )}
+            </div>
           </div>
 
           {/* Close button and owner - right side on desktop, top on mobile */}

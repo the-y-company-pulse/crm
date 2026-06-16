@@ -39,6 +39,8 @@ export type Deal = {
   wonAt: string | null;
   lostAt: string | null;
   expectedCloseDate: string | null;
+  reminderAt: string | null;
+  reminderNote: string | null;
   projectId?: string | null;
   project?: {
     id: string;
@@ -75,6 +77,42 @@ export type SalesSummary = {
   yearlyTarget: number;
   monthlyTargets: number[]; // length 12
 };
+
+// --- Reminders / planned activities ---
+
+export type ReminderStatus = "none" | "upcoming" | "today" | "overdue";
+
+// Status of a deal's planned activity relative to today (calendar-day based).
+export function reminderStatus(iso: string | null | undefined): ReminderStatus {
+  if (!iso) return "none";
+  const d = new Date(iso);
+  const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (day < today) return "overdue";
+  if (day === today) return "today";
+  return "upcoming";
+}
+
+const REMINDER_WEEKDAYS = ["sön", "mån", "tis", "ons", "tors", "fre", "lör"];
+const REMINDER_MONTHS = ["jan","feb","mar","apr","maj","jun","jul","aug","sep","okt","nov","dec"];
+
+// e.g. "ons 18 jun" — short form used on cards and in the detail view.
+export function formatReminderDate(iso: string): string {
+  const d = new Date(iso);
+  const thisYear = d.getFullYear() === new Date().getFullYear();
+  const year = thisYear ? "" : ` ${d.getFullYear()}`;
+  return `${REMINDER_WEEKDAYS[d.getDay()]} ${d.getDate()} ${REMINDER_MONTHS[d.getMonth()]}${year}`;
+}
+
+// "2026-06-18" — value for an <input type="date"> from a stored ISO datetime.
+export function reminderDateInputValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
 
 export const ACTIVITY_LABELS: Record<Activity["type"], string> = {
   note: "Anteckning",

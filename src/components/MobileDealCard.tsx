@@ -1,6 +1,7 @@
 "use client";
 
 import type { Deal, Stage } from "@/lib/types";
+import ReminderBadge from "./ReminderBadge";
 
 type Props = {
   deal: Deal;
@@ -57,6 +58,12 @@ export default function MobileDealCard({ deal, onOpen, onMove, stages, isSearchH
             </span>
           )}
         </div>
+
+        {deal.reminderAt && (
+          <div className="mt-3">
+            <ReminderBadge reminderAt={deal.reminderAt} reminderNote={deal.reminderNote} />
+          </div>
+        )}
       </div>
 
       {/* Move buttons - visas bara om det finns andra faser att flytta till */}

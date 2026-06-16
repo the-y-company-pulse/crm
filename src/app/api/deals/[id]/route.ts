@@ -19,6 +19,9 @@ const UpdateDealSchema = z.object({
   ownerId: z.string().min(1).optional(),
   status: z.enum(["open", "won", "lost"]).optional(),
   projectId: z.string().nullable().optional(),
+  // Planned activity / reminder. reminderAt is a "YYYY-MM-DD" date or null to clear.
+  reminderAt: z.string().nullable().optional(),
+  reminderNote: z.string().nullable().optional(),
 });
 
 export async function PATCH(
@@ -101,6 +104,17 @@ export async function PATCH(
 
   // Handle project
   if (parsed.data.projectId !== undefined) updateData.projectId = parsed.data.projectId;
+
+  // Handle reminder / planned activity. Store the date at noon UTC so the
+  // calendar day is stable across timezones.
+  if (parsed.data.reminderAt !== undefined) {
+    updateData.reminderAt = parsed.data.reminderAt
+      ? new Date(`${parsed.data.reminderAt.slice(0, 10)}T12:00:00.000Z`)
+      : null;
+  }
+  if (parsed.data.reminderNote !== undefined) {
+    updateData.reminderNote = parsed.data.reminderNote?.trim() || null;
+  }
 
   // If stageId is being updated, check if it's a terminal stage
   if (parsed.data.stageId) {

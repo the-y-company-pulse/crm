@@ -3,6 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { Deal } from "@/lib/types";
+import ReminderBadge from "./ReminderBadge";
 
 type Props = {
   deal: Deal;
@@ -73,6 +74,11 @@ export default function DealCard({ deal, isSelected, isOverlay, onClick, isSearc
           {ownerInitial}
         </span>
       </div>
+      {deal.reminderAt && (
+        <div className="mt-2.5">
+          <ReminderBadge reminderAt={deal.reminderAt} reminderNote={deal.reminderNote} />
+        </div>
+      )}
     </div>
   );
 }

@@ -55,6 +55,13 @@
   .is-search-dim { opacity: 0.25; }
   .is-search-dim:hover { opacity: 0.6; }
 
+  /* Overdue reminder pill — gentle pulse to draw the eye */
+  .reminder-overdue { animation: reminderPulse 2s ease-in-out infinite; }
+  @keyframes reminderPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    50% { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25); }
+  }
+
   /* Kanban column */
   .y-col {
     @apply rounded-xl p-4 min-h-[400px] flex flex-col border border-white/[0.10];
