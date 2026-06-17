@@ -55,6 +55,9 @@
   .is-search-dim { opacity: 0.25; }
   .is-search-dim:hover { opacity: 0.6; }
 
+  /* Clickable month column in the statistik chart */
+  .stat-month-hit:hover { fill: rgba(255, 255, 255, 0.06); }
+
   /* Overdue reminder pill — gentle pulse to draw the eye */
   .reminder-overdue { animation: reminderPulse 2s ease-in-out infinite; }
   @keyframes reminderPulse {

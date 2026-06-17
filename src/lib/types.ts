@@ -76,6 +76,19 @@ export type SalesSummary = {
   monthlyPrev: { value: number; count: number }[];
   yearlyTarget: number;
   monthlyTargets: number[]; // length 12
+  wonDeals: WonDeal[]; // current-year won deals, for the per-month breakdown
+};
+
+// A won deal in the requested year, used to break down a month's bar.
+export type WonDeal = {
+  id: string;
+  title: string;
+  value: number;
+  month: number; // 0-11
+  company: string | null;
+  contact: string | null;
+  owner: { name: string; color: string; initial: string } | null;
+  wonAt: string;
 };
 
 // --- Reminders / planned activities ---

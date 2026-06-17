@@ -58,7 +58,12 @@ async function fetchSummary(year: number, userId: string) {
   const [wonThis, wonPrev, lostThis, targets] = await Promise.all([
     prisma.deal.findMany({
       where: { ...ownerFilter, status: "won", wonAt: { gte: yearStart, lt: yearEnd } },
-      select: { value: true, wonAt: true },
+      select: {
+        id: true, title: true, value: true, wonAt: true, company: true, contact: true,
+        company_rel: { select: { name: true } },
+        contact_rel: { select: { fullName: true } },
+        owner: { select: { name: true, color: true, initial: true } },
+      },
     }),
     prisma.deal.findMany({
       where: { ...ownerFilter, status: "won", wonAt: { gte: prevStart, lt: prevEnd } },
@@ -69,6 +74,20 @@ async function fetchSummary(year: number, userId: string) {
     }),
     prisma.target.findMany({ where: { userId: targetUserId, year } }),
   ]);
+
+  const wonDeals = wonThis
+    .filter((d) => d.wonAt)
+    .map((d) => ({
+      id: d.id,
+      title: d.title,
+      value: d.value,
+      month: d.wonAt!.getUTCMonth(),
+      company: d.company_rel?.name ?? d.company ?? null,
+      contact: d.contact_rel?.fullName ?? d.contact ?? null,
+      owner: d.owner ? { name: d.owner.name, color: d.owner.color, initial: d.owner.initial } : null,
+      wonAt: d.wonAt!.toISOString(),
+    }))
+    .sort((a, b) => b.value - a.value);
 
   const bucket = () => Array.from({ length: 12 }, () => ({ value: 0, count: 0 }));
   const monthlyThis = bucket();
@@ -112,5 +131,6 @@ async function fetchSummary(year: number, userId: string) {
     monthlyPrev,
     yearlyTarget,
     monthlyTargets,
+    wonDeals,
   };
 }

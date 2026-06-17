@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { User, SalesSummary } from "@/lib/types";
+import type { User, SalesSummary, WonDeal } from "@/lib/types";
 import TargetModal from "./TargetModal";
 
 type Props = {
@@ -21,6 +21,7 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
   const isCurrentYear = year === today.getFullYear();
   const currentMonth = isCurrentYear ? today.getMonth() + 1 : 12;
   const [showTargetModal, setShowTargetModal] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
   const fmt = (v: number) => v.toLocaleString("sv-SE");
   const fmtSEK = (v: number) => fmt(v) + " SEK";
@@ -138,6 +139,36 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
              extra={summary.yearlyTarget > 0 ? `${Math.round((forecast / summary.yearlyTarget) * 100)}% av mål` : "linjär"} />
       </div>
 
+      {/* Full-year progress vs target */}
+      {summary.yearlyTarget > 0 && (
+        <div className="bg-white/[0.025] border border-white/[0.08] rounded-xl p-5">
+          <div className="flex justify-between items-baseline mb-3">
+            <h3 className="font-display text-base">Helår {year} mot mål</h3>
+            <span className={`font-display text-lg ${pctOfTarget >= 100 ? "text-green-400" : "text-neon"}`}>
+              {pctOfTarget}%
+            </span>
+          </div>
+          <div className="relative h-6 bg-white/[0.05] rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${Math.min(pctOfTarget, 100)}%`,
+                background: pctOfTarget >= 100 ? "#4ade80" : "#deff00",
+              }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-sm">
+            <span className="text-white font-medium">{fmtSEK(summary.yearTotal)}</span>
+            <span className="text-white/50">av {fmtSEK(summary.yearlyTarget)}</span>
+          </div>
+          {pctOfTarget < 100 && (
+            <p className="text-[11px] text-white/40 mt-1">
+              {fmtSEK(summary.yearlyTarget - summary.yearTotal)} kvar till målet
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Monthly chart */}
       <div className="bg-white/[0.025] border border-white/[0.08] rounded-xl p-5">
         <div className="flex justify-between items-center mb-4">
@@ -169,8 +200,13 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
             const curr = summary.monthlyThis[i].value;
             const isFuture = isCurrentYear && i + 1 > currentMonth;
             const target = monthlyTargetForMonth(i);
+            const count = summary.monthlyThis[i].count;
+            const hasDeals = count > 0;
             return (
               <g key={i}>
+                {selectedMonth === i && (
+                  <rect x={x - 5} y={50} width={46} height={150} fill="rgba(222,255,0,0.07)" rx="3" />
+                )}
                 {prev > 0 && (
                   <rect x={x + 6} y={yScale(prev)} width="22" height={200 - yScale(prev)}
                         fill="rgba(148,173,186,0.35)" rx="2" />
@@ -186,12 +222,22 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
                 <text x={x + 11} y="218" fill="rgba(255,255,255,0.45)" fontSize="9" textAnchor="middle">
                   {MONTH_LABELS[i]}
                 </text>
+                {hasDeals && (
+                  <rect
+                    x={x - 5} y={50} width={46} height={168}
+                    fill="transparent" className="stat-month-hit"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setSelectedMonth(i)}
+                  >
+                    <title>{MONTH_LABELS[i]}: {fmtShort(curr)} · {count} {count === 1 ? "affär" : "affärer"} — klicka för detaljer</title>
+                  </rect>
+                )}
               </g>
             );
           })}
         </svg>
         <p className="text-[11px] text-white/35 text-center mt-2">
-          Streckade staplar = framtida månader (visar mål)
+          Klicka på en månad för att se affärerna · streckade staplar = framtida månader (visar mål)
         </p>
       </div>
 
@@ -246,6 +292,15 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
           <strong className="text-white font-medium">Inget årsmål satt än.</strong>
           {" "}Lägg till mål för {year} via API:t (POST /api/targets) eller bygg en mål-editor som nästa feature.
         </div>
+      )}
+
+      {selectedMonth !== null && (
+        <MonthDealsModal
+          monthLabel={MONTH_LABELS[selectedMonth]}
+          year={year}
+          deals={summary.wonDeals.filter((d) => d.month === selectedMonth)}
+          onClose={() => setSelectedMonth(null)}
+        />
       )}
 
       {showTargetModal && (
@@ -307,6 +362,76 @@ function Bar({ pct, over, muted }: { pct: number; over?: boolean; muted?: boolea
   return (
     <div className="flex-1 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+    </div>
+  );
+}
+
+function MonthDealsModal({ monthLabel, year, deals, onClose }: {
+  monthLabel: string; year: number; deals: WonDeal[]; onClose: () => void;
+}) {
+  const fmtSEK = (v: number) => v.toLocaleString("sv-SE") + " SEK";
+  const total = deals.reduce((s, d) => s + d.value, 0);
+  const monthName = { jan: "Januari", feb: "Februari", mar: "Mars", apr: "April", maj: "Maj", jun: "Juni",
+    jul: "Juli", aug: "Augusti", sep: "September", okt: "Oktober", nov: "November", dec: "December" }[monthLabel] ?? monthLabel;
+
+  return (
+    <div
+      className="fixed inset-0 bg-ink-950/[0.97] backdrop-blur-xl z-40 flex items-center justify-center p-0 md:p-8"
+      onClick={onClose}
+    >
+      <div
+        className="bg-navy-800 border-0 md:border md:border-white/[0.12] rounded-none md:rounded-2xl w-full md:max-w-2xl h-full md:h-auto md:max-h-[85vh] flex flex-col shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="px-5 md:px-7 py-4 md:py-5 border-b border-white/[0.08] flex items-start justify-between gap-4 flex-shrink-0">
+          <div>
+            <h2 className="font-display text-xl md:text-2xl text-white">{monthName} {year}</h2>
+            <p className="text-sm text-white/50 mt-1">
+              {deals.length} {deals.length === 1 ? "vunnen affär" : "vunna affärer"} · <span className="text-neon font-medium">{fmtSEK(total)}</span>
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/40 hover:text-white text-3xl leading-none px-2 -mr-2"
+            aria-label="Stäng"
+          >
+            ×
+          </button>
+        </header>
+        <div className="flex-1 overflow-y-auto px-5 md:px-7 py-4 md:py-5">
+          {deals.length === 0 ? (
+            <p className="text-sm text-white/30 text-center py-12">Inga affärer denna månad.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {deals.map((d) => {
+                const sub = [d.company, d.contact].filter(Boolean).join(" · ");
+                const dayNum = new Date(d.wonAt).getUTCDate();
+                return (
+                  <li key={d.id} className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 md:px-4 py-3">
+                    {d.owner && (
+                      <span
+                        className="owner-dot w-7 h-7 flex-shrink-0 text-xs"
+                        style={{ background: d.owner.color, color: d.owner.color === "#deff00" ? "#0a1420" : "white" }}
+                        title={d.owner.name}
+                      >
+                        {d.owner.initial}
+                      </span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-white truncate">{d.title}</div>
+                      {sub && <div className="text-xs text-white/50 truncate">{sub}</div>}
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-sm font-semibold text-white whitespace-nowrap">{fmtSEK(d.value)}</div>
+                      <div className="text-[11px] text-white/35">{dayNum} {monthLabel}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
