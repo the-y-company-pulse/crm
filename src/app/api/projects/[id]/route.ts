@@ -11,6 +11,7 @@ const UpdateProjectSchema = z.object({
   maxParticipants: z.number().int().positive().optional(),
   pricePerParticipant: z.number().int().nonnegative().optional(),
   status: z.enum(["planned", "open", "full", "completed"]).optional(),
+  isFavorite: z.boolean().optional(),
   notes: z.string().nullable().optional(),
 })
 
@@ -73,6 +74,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (parsed.data.maxParticipants !== undefined) data.maxParticipants = parsed.data.maxParticipants
   if (parsed.data.pricePerParticipant !== undefined) data.pricePerParticipant = parsed.data.pricePerParticipant
   if (parsed.data.status !== undefined) data.status = parsed.data.status
+  if (parsed.data.isFavorite !== undefined) data.isFavorite = parsed.data.isFavorite
   if (parsed.data.notes !== undefined) data.notes = parsed.data.notes
 
   const project = await prisma.project.update({

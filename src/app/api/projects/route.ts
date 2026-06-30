@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
       maxParticipants: true,
       pricePerParticipant: true,
       status: true,
+      isFavorite: true,
       createdAt: true,
       _count: {
         select: {

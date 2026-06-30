@@ -232,6 +232,7 @@ model Project {
   maxParticipants     Int
   pricePerParticipant Int
   status              String   @default("planned")
+  isFavorite          Boolean  @default(false) // pinned to the dashboard for fill-rate tracking
   notes               String?  @db.Text
 
   deals               Deal[]

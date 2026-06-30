@@ -143,6 +143,24 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
     setEditingReminder(true);
   }
 
+  async function completeReminder() {
+    setSavingReminder(true);
+    try {
+      const res = await fetch(`/api/deals/${deal.id}/reminder/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Failed to complete reminder");
+      const updated: Deal = await res.json();
+      onDealUpdate(updated);
+    } catch (err) {
+      console.error("Failed to complete reminder:", err);
+      alert("Kunde inte markera påminnelsen som klar");
+    } finally {
+      setSavingReminder(false);
+    }
+  }
+
   return (
     <>
       <div
@@ -280,6 +298,16 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
                   {reminderStatus(deal.reminderAt) === "overdue" && (
                     <div className="text-xs text-red-400/80">Datumet har passerat ({formatReminderDate(deal.reminderAt)})</div>
                   )}
+                  <button
+                    onClick={completeReminder}
+                    disabled={savingReminder}
+                    className="mt-1 self-start inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-green-500/15 text-green-400 border border-green-500/30 hover:bg-green-500/25 disabled:opacity-40 transition touch-target"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Klar
+                  </button>
                 </div>
               ) : (
                 <div className="text-sm text-white/30">Ingen planerad aktivitet.</div>
