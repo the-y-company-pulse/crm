@@ -150,6 +150,7 @@ export type Project = {
   maxParticipants: number
   pricePerParticipant: number
   status: "planned" | "open" | "full" | "completed"
+  isFavorite: boolean
   notes: string | null
   createdAt: string
   updatedAt: string

@@ -52,6 +52,22 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
     }
   }
 
+  async function handleToggleFavorite() {
+    const next = !project.isFavorite
+    setProject((p) => ({ ...p, isFavorite: next }))
+    try {
+      const res = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFavorite: next }),
+      })
+      if (!res.ok) throw new Error("Failed to update")
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err)
+      setProject((p) => ({ ...p, isFavorite: !next }))
+    }
+  }
+
   async function handleAddParticipant(data: any) {
     const res = await fetch(`/api/projects/${project.id}/participants`, {
       method: "POST",
@@ -167,7 +183,19 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
         </Link>
         <div className="flex items-start justify-between mt-4">
           <div>
-            <h1 className="font-display text-3xl text-white mb-2">{project.name}</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <button
+                onClick={handleToggleFavorite}
+                className={`${project.isFavorite ? "text-neon" : "text-white/25 hover:text-white/60"} transition-colors`}
+                aria-label={project.isFavorite ? "Ta bort från favoriter" : "Favoritmarkera"}
+                title={project.isFavorite ? "Visas på dashboard" : "Favoritmarkera – visa på dashboard"}
+              >
+                <svg className="w-7 h-7" viewBox="0 0 24 24" fill={project.isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.5a.56.56 0 011.04 0l2.08 4.21c.08.17.24.29.42.31l4.65.68c.46.07.64.63.31.95l-3.36 3.28a.56.56 0 00-.16.5l.79 4.62c.08.46-.4.81-.81.59l-4.16-2.19a.56.56 0 00-.52 0l-4.16 2.19c-.41.22-.89-.13-.81-.59l.79-4.62a.56.56 0 00-.16-.5L3.37 9.65c-.33-.32-.15-.88.31-.95l4.65-.68a.56.56 0 00.42-.31L11.48 3.5z" />
+                </svg>
+              </button>
+              <h1 className="font-display text-3xl text-white">{project.name}</h1>
+            </div>
             <div className="text-white/40 text-sm space-y-1">
               <div>
                 {new Date(project.startDate).toLocaleDateString("sv-SE", {

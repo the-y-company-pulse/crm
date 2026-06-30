@@ -17,6 +17,7 @@ export default async function ProjectsPage() {
       maxParticipants: true,
       pricePerParticipant: true,
       status: true,
+      isFavorite: true,
       createdAt: true,
       participants: {
         select: {
@@ -49,6 +50,7 @@ export default async function ProjectsPage() {
       maxParticipants: project.maxParticipants,
       pricePerParticipant: project.pricePerParticipant,
       status: project.status,
+      isFavorite: project.isFavorite,
       createdAt: project.createdAt,
       invoiced,
       paid,

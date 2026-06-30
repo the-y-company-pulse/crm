@@ -40,6 +40,24 @@ export default function ProjectList({
     setShowNewModal(false)
   }
 
+  async function handleToggleFavorite(e: React.MouseEvent, project: ProjectWithStats) {
+    e.preventDefault()
+    e.stopPropagation()
+    const next = !project.isFavorite
+    setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, isFavorite: next } : p)))
+    try {
+      const res = await fetch(`/api/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isFavorite: next }),
+      })
+      if (!res.ok) throw new Error("Failed to update")
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err)
+      setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, isFavorite: !next } : p)))
+    }
+  }
+
   async function handleDelete(e: React.MouseEvent, project: ProjectWithStats) {
     e.preventDefault()
     e.stopPropagation()
@@ -99,6 +117,14 @@ export default function ProjectList({
               className="bg-navy/80 border border-white/[0.15] rounded-lg p-4 touch-target transition-all hover:bg-navy"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
+                <button
+                  onClick={(e) => handleToggleFavorite(e, project)}
+                  className={`touch-target -ml-1 mt-0.5 ${project.isFavorite ? "text-neon" : "text-white/25 hover:text-white/60"} transition-colors`}
+                  aria-label={project.isFavorite ? "Ta bort från favoriter" : "Favoritmarkera"}
+                  title={project.isFavorite ? "Visas på dashboard" : "Favoritmarkera – visa på dashboard"}
+                >
+                  <StarIcon filled={project.isFavorite} />
+                </button>
                 <h3 className="text-base font-medium text-white flex-1">{project.name}</h3>
                 <span
                   className="px-2 py-1 text-xs rounded"
@@ -214,12 +240,22 @@ export default function ProjectList({
                 className="border-b border-white/[0.05] hover:bg-white/[0.02] transition-colors"
               >
                 <td className="px-6 py-4">
-                  <Link
-                    href={`/projekt/${project.id}`}
-                    className="text-white font-medium hover:text-neon transition-colors"
-                  >
-                    {project.name}
-                  </Link>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      onClick={(e) => handleToggleFavorite(e, project)}
+                      className={`${project.isFavorite ? "text-neon" : "text-white/20 hover:text-white/50"} transition-colors`}
+                      aria-label={project.isFavorite ? "Ta bort från favoriter" : "Favoritmarkera"}
+                      title={project.isFavorite ? "Visas på dashboard" : "Favoritmarkera – visa på dashboard"}
+                    >
+                      <StarIcon filled={project.isFavorite} />
+                    </button>
+                    <Link
+                      href={`/projekt/${project.id}`}
+                      className="text-white font-medium hover:text-neon transition-colors"
+                    >
+                      {project.name}
+                    </Link>
+                  </div>
                 </td>
                 <td className="px-6 py-4 text-white/60 text-sm">
                   {new Date(project.startDate).toLocaleDateString("sv-SE")}
@@ -271,5 +307,23 @@ export default function ProjectList({
         />
       )}
     </div>
+  )
+}
+
+function StarIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      className="w-5 h-5"
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={1.6}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M11.48 3.5a.56.56 0 011.04 0l2.08 4.21c.08.17.24.29.42.31l4.65.68c.46.07.64.63.31.95l-3.36 3.28a.56.56 0 00-.16.5l.79 4.62c.08.46-.4.81-.81.59l-4.16-2.19a.56.56 0 00-.52 0l-4.16 2.19c-.41.22-.89-.13-.81-.59l.79-4.62a.56.56 0 00-.16-.5L3.37 9.65c-.33-.32-.15-.88.31-.95l4.65-.68a.56.56 0 00.42-.31L11.48 3.5z"
+      />
+    </svg>
   )
 }
