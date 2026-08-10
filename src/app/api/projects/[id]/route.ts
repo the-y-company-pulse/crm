@@ -4,8 +4,10 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
 const UpdateProjectSchema = z.object({
+  type: z.enum(["ledarskapsprogram", "vardegrundsarbete"]).optional(),
   name: z.string().min(1).optional(),
   startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().nullable().optional(),
   format: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   maxParticipants: z.number().int().positive().optional(),
@@ -37,6 +39,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       sessions: {
         orderBy: { date: "asc" },
       },
+      milestones: {
+        orderBy: [{ date: "asc" }, { order: "asc" }],
+      },
       deals: {
         include: {
           owner: true,
@@ -67,8 +72,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const data: any = {}
+  if (parsed.data.type !== undefined) data.type = parsed.data.type
   if (parsed.data.name !== undefined) data.name = parsed.data.name
   if (parsed.data.startDate !== undefined) data.startDate = new Date(parsed.data.startDate)
+  if (parsed.data.endDate !== undefined) data.endDate = parsed.data.endDate ? new Date(parsed.data.endDate) : null
   if (parsed.data.format !== undefined) data.format = parsed.data.format
   if (parsed.data.location !== undefined) data.location = parsed.data.location
   if (parsed.data.maxParticipants !== undefined) data.maxParticipants = parsed.data.maxParticipants
@@ -89,6 +96,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             },
           },
         },
+      },
+      sessions: {
+        orderBy: { date: "asc" },
+      },
+      milestones: {
+        orderBy: [{ date: "asc" }, { order: "asc" }],
       },
       deals: {
         include: {

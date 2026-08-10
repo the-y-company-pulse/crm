@@ -141,10 +141,19 @@ export const ACTIVITY_COLORS: Record<Activity["type"], string> = {
   meeting: "#7F77DD",
 };
 
+export type ProjectType = "ledarskapsprogram" | "vardegrundsarbete"
+
+export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
+  ledarskapsprogram: "Ledarskapsprogram",
+  vardegrundsarbete: "Värdegrundsarbete",
+}
+
 export type Project = {
   id: string
+  type: ProjectType
   name: string
   startDate: string
+  endDate: string | null
   format: string | null
   location: string | null
   maxParticipants: number
@@ -154,6 +163,31 @@ export type Project = {
   notes: string | null
   createdAt: string
   updatedAt: string
+}
+
+// A deliverable / phase within a project (delleverans), placed as a point on the
+// project's timeline and checked off as the project progresses.
+export type Milestone = {
+  id: string
+  projectId: string
+  title: string
+  date: string
+  status: "planned" | "done"
+  completedAt: string | null
+  order: number
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export const MILESTONE_STATUS_LABELS: Record<Milestone["status"], string> = {
+  planned: "Planerad",
+  done: "Klar",
+}
+
+export const MILESTONE_STATUS_COLORS: Record<Milestone["status"], string> = {
+  planned: "#888780", // muted — not yet delivered
+  done: "#deff00", // neon — delivered
 }
 
 export type Participant = {
@@ -176,6 +210,9 @@ export type Participant = {
 export type ProjectWithStats = Project & {
   invoiced: number
   paid: number
+  // Included for the timeline view; the list view ignores them.
+  milestones?: Milestone[]
+  sessions?: { date: string }[] // used to derive the project bar's end when no endDate is set
   _count: {
     participants: number
     deals: number
@@ -185,6 +222,7 @@ export type ProjectWithStats = Project & {
 export type ProjectDetail = Project & {
   participants: Participant[]
   sessions: ProjectSession[]
+  milestones: Milestone[]
   deals: Array<{
     id: string
     title: string

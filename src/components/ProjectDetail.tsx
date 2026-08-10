@@ -4,13 +4,15 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { ProjectDetail as ProjectDetailType } from "@/lib/types"
-import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS, PARTICIPANT_STATUS_LABELS } from "@/lib/types"
+import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS, PARTICIPANT_STATUS_LABELS, PROJECT_TYPE_LABELS } from "@/lib/types"
 import EditProjectModal from "./EditProjectModal"
 import AddParticipantModal from "./AddParticipantModal"
 import EditParticipantModal from "./EditParticipantModal"
 import AddSessionsModal from "./AddSessionsModal"
 import EditSessionModal from "./EditSessionModal"
-import type { Participant, ProjectSession } from "@/lib/types"
+import MilestoneModal, { type MilestoneInput } from "./MilestoneModal"
+import ProjectMilestoneStrip from "./ProjectMilestoneStrip"
+import type { Participant, ProjectSession, Milestone } from "@/lib/types"
 
 export default function ProjectDetail({ project: initialProject }: { project: ProjectDetailType }) {
   const [project, setProject] = useState(initialProject)
@@ -19,7 +21,16 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null)
   const [showAddSessions, setShowAddSessions] = useState(false)
   const [editingSession, setEditingSession] = useState<ProjectSession | null>(null)
+  const [showAddMilestone, setShowAddMilestone] = useState(false)
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null)
   const router = useRouter()
+
+  const isCourse = project.type === "ledarskapsprogram"
+
+  const milestones = [...(project.milestones ?? [])].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  )
+  const doneMilestones = milestones.filter((m) => m.status === "done").length
 
   const confirmedParticipants = project.participants.filter((p) => p.status === "confirmed")
   const availableSpots = project.maxParticipants - confirmedParticipants.length
@@ -172,6 +183,82 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
     }
   }
 
+  async function handleAddMilestone(data: MilestoneInput) {
+    const res = await fetch(`/api/projects/${project.id}/milestones`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (res.ok) {
+      const milestone = await res.json()
+      setProject({ ...project, milestones: [...(project.milestones ?? []), milestone] })
+      setShowAddMilestone(false)
+      router.refresh()
+    }
+  }
+
+  async function handleUpdateMilestone(milestoneId: string, data: Partial<MilestoneInput>) {
+    const res = await fetch(`/api/projects/${project.id}/milestones/${milestoneId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
+    if (res.ok) {
+      const updated = await res.json()
+      setProject({
+        ...project,
+        milestones: (project.milestones ?? []).map((m) => (m.id === milestoneId ? updated : m)),
+      })
+      setEditingMilestone(null)
+      router.refresh()
+    }
+  }
+
+  async function handleToggleMilestone(m: Milestone) {
+    const nextStatus = m.status === "done" ? "planned" : "done"
+    // Optimistic.
+    setProject((prev) => ({
+      ...prev,
+      milestones: (prev.milestones ?? []).map((x) =>
+        x.id === m.id
+          ? { ...x, status: nextStatus, completedAt: nextStatus === "done" ? new Date().toISOString() : null }
+          : x
+      ),
+    }))
+    try {
+      const res = await fetch(`/api/projects/${project.id}/milestones/${m.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      })
+      if (!res.ok) throw new Error("Failed")
+      router.refresh()
+    } catch {
+      setProject((prev) => ({
+        ...prev,
+        milestones: (prev.milestones ?? []).map((x) =>
+          x.id === m.id ? { ...x, status: m.status, completedAt: m.completedAt } : x
+        ),
+      }))
+    }
+  }
+
+  async function handleRemoveMilestone(milestoneId: string) {
+    if (!confirm("Ta bort denna delleverans?")) return
+    const res = await fetch(`/api/projects/${project.id}/milestones/${milestoneId}`, {
+      method: "DELETE",
+    })
+    if (res.ok) {
+      setProject({
+        ...project,
+        milestones: (project.milestones ?? []).filter((m) => m.id !== milestoneId),
+      })
+      router.refresh()
+    }
+  }
+
   return (
     <div className="px-8 py-8">
       <div className="mb-8">
@@ -203,11 +290,24 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
                   month: "long",
                   day: "numeric",
                 })}
+                {project.endDate && (
+                  <>
+                    {" – "}
+                    {new Date(project.endDate).toLocaleDateString("sv-SE", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </>
+                )}
               </div>
               <div>{project.participants.length} deltagare · {project.deals.length} deals</div>
             </div>
           </div>
           <div className="flex gap-2 items-center">
+            <span className="px-3 py-1.5 text-sm rounded bg-white/[0.06] text-white/70 border border-white/[0.10]">
+              {PROJECT_TYPE_LABELS[project.type]}
+            </span>
             <span
               className="px-3 py-1.5 text-sm rounded"
               style={{
@@ -236,60 +336,88 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 mb-8">
-        <div className="glass rounded-xl p-6">
-          <div className="text-white/40 text-sm mb-2">Bekräftade deltagare</div>
-          <div className="text-2xl font-bold text-white">
-            {confirmedParticipants.length}/{project.maxParticipants}
+      {isCourse ? (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 mb-8">
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Bekräftade deltagare</div>
+            <div className="text-2xl font-bold text-white">
+              {confirmedParticipants.length}/{project.maxParticipants}
+            </div>
+          </div>
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Lediga platser</div>
+            <div className="text-2xl font-bold text-neon">
+              {availableSpots} st
+            </div>
+          </div>
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Fakturerat</div>
+            <div className="text-2xl font-bold text-white">
+              {fmt(totalValue)}
+            </div>
+          </div>
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Betalt</div>
+            <div className="text-2xl font-bold text-green-400">
+              {fmt(totalPaid)}
+            </div>
+          </div>
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Obetalt</div>
+            <div className="text-2xl font-bold text-yellow-400">
+              {fmt(totalUnpaid)}
+            </div>
           </div>
         </div>
-        <div className="glass rounded-xl p-6">
-          <div className="text-white/40 text-sm mb-2">Lediga platser</div>
-          <div className="text-2xl font-bold text-neon">
-            {availableSpots} st
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Delleveranser klara</div>
+            <div className="text-2xl font-bold text-white">
+              {doneMilestones}/{milestones.length}
+            </div>
+          </div>
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Pipeline-värde</div>
+            <div className="text-2xl font-bold text-neon">{fmt(pipelineValue)}</div>
+          </div>
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Fakturerat</div>
+            <div className="text-2xl font-bold text-white">{fmt(totalValue)}</div>
+          </div>
+          <div className="glass rounded-xl p-6">
+            <div className="text-white/40 text-sm mb-2">Kopplade deals</div>
+            <div className="text-2xl font-bold text-white">{project.deals.length}</div>
           </div>
         </div>
-        <div className="glass rounded-xl p-6">
-          <div className="text-white/40 text-sm mb-2">Fakturerat</div>
-          <div className="text-2xl font-bold text-white">
-            {fmt(totalValue)}
-          </div>
-        </div>
-        <div className="glass rounded-xl p-6">
-          <div className="text-white/40 text-sm mb-2">Betalt</div>
-          <div className="text-2xl font-bold text-green-400">
-            {fmt(totalPaid)}
-          </div>
-        </div>
-        <div className="glass rounded-xl p-6">
-          <div className="text-white/40 text-sm mb-2">Obetalt</div>
-          <div className="text-2xl font-bold text-yellow-400">
-            {fmt(totalUnpaid)}
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Info Section */}
+      {(isCourse || project.notes) && (
       <div className="glass rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">Information</h3>
-          <button onClick={() => setShowAddSessions(true)} className="btn">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Lägg till sessioner
-          </button>
+          {isCourse && (
+            <button onClick={() => setShowAddSessions(true)} className="btn">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Lägg till sessioner
+            </button>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <div>
-            <div className="text-white/40 text-sm mb-1">Format</div>
-            <div className="text-white">{project.format || "—"}</div>
+        {isCourse && (
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <div className="text-white/40 text-sm mb-1">Format</div>
+              <div className="text-white">{project.format || "—"}</div>
+            </div>
+            <div>
+              <div className="text-white/40 text-sm mb-1">Pris per deltagare</div>
+              <div className="text-white">{fmt(project.pricePerParticipant)}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-white/40 text-sm mb-1">Pris per deltagare</div>
-            <div className="text-white">{fmt(project.pricePerParticipant)}</div>
-          </div>
-        </div>
+        )}
         {project.notes && (
           <div className="mb-6">
             <div className="text-white/40 text-sm mb-1">Anteckningar</div>
@@ -298,7 +426,7 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
         )}
 
         {/* Sessions */}
-        {project.sessions.length > 0 && (
+        {isCourse && project.sessions.length > 0 && (
           <div>
             <div className="text-white/40 text-sm mb-3">Sessioner ({project.sessions.length})</div>
             <div className="space-y-2">
@@ -347,8 +475,117 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
           </div>
         )}
       </div>
+      )}
+
+      {/* Delleveranser (milestones) Section */}
+      <div className="glass rounded-xl p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">
+            Delleveranser{" "}
+            {milestones.length > 0 && (
+              <span className="text-white/40 font-normal text-base">
+                · {doneMilestones}/{milestones.length} klara
+              </span>
+            )}
+          </h3>
+          <button onClick={() => setShowAddMilestone(true)} className="btn">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Lägg till delleverans
+          </button>
+        </div>
+
+        {milestones.length === 0 ? (
+          <div className="text-center py-8 text-white/40">
+            Inga delleveranser ännu. Lägg till t.ex. introduktion, workshop och analysmöte för att bygga tidslinjen.
+          </div>
+        ) : (
+          <>
+            {/* Mini timeline strip */}
+            <ProjectMilestoneStrip
+              startDate={project.startDate}
+              endDate={project.endDate}
+              milestones={milestones}
+              className="mb-6"
+            />
+
+            {/* List */}
+            <div className="space-y-2">
+              {milestones.map((m) => {
+                const overdue =
+                  m.status !== "done" && new Date(m.date).getTime() < Date.now()
+                return (
+                  <div
+                    key={m.id}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/[0.08]"
+                  >
+                    <button
+                      onClick={() => handleToggleMilestone(m)}
+                      className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        m.status === "done"
+                          ? "bg-neon border-neon text-ink-950"
+                          : overdue
+                          ? "border-red-500 text-transparent hover:border-red-400"
+                          : "border-white/40 text-transparent hover:border-neon"
+                      }`}
+                      title={m.status === "done" ? "Markera som ej klar" : "Klarmarkera"}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`font-medium ${
+                          m.status === "done" ? "text-white/50 line-through" : "text-white"
+                        }`}
+                      >
+                        {m.title}
+                      </div>
+                      <div className="text-sm text-white/40 flex items-center gap-2">
+                        <span>
+                          {new Date(m.date).toLocaleDateString("sv-SE", {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                        {overdue && <span className="text-red-400">· Försenad</span>}
+                        {m.notes && <span className="text-white/50 italic truncate">· {m.notes}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => setEditingMilestone(m)}
+                        className="text-white/40 hover:text-neon transition-colors"
+                        title="Redigera delleverans"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleRemoveMilestone(m.id)}
+                        className="text-white/40 hover:text-red-400 transition-colors"
+                        title="Ta bort delleverans"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Participants Section */}
+      {isCourse && (
       <div className="glass rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">
@@ -450,6 +687,7 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
           </div>
         )}
       </div>
+      )}
 
       {/* Deals Section */}
       <div className="glass rounded-xl p-6">
@@ -535,6 +773,22 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
           session={editingSession}
           onClose={() => setEditingSession(null)}
           onUpdate={(data) => handleUpdateSession(editingSession.id, data)}
+        />
+      )}
+
+      {showAddMilestone && (
+        <MilestoneModal
+          defaultDate={project.endDate ? project.endDate.split("T")[0] : project.startDate.split("T")[0]}
+          onClose={() => setShowAddMilestone(false)}
+          onSubmit={handleAddMilestone}
+        />
+      )}
+
+      {editingMilestone && (
+        <MilestoneModal
+          milestone={editingMilestone}
+          onClose={() => setEditingMilestone(null)}
+          onSubmit={(data) => handleUpdateMilestone(editingMilestone.id, data)}
         />
       )}
     </div>

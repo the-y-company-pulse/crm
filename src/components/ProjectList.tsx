@@ -6,6 +6,7 @@ import { useIsMobile } from "@/hooks/useMediaQuery"
 import type { ProjectWithStats } from "@/lib/types"
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from "@/lib/types"
 import NewProjectModal from "./NewProjectModal"
+import ProjectTimeline from "./ProjectTimeline"
 
 export default function ProjectList({
   projects: initialProjects
@@ -17,6 +18,7 @@ export default function ProjectList({
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [showNewModal, setShowNewModal] = useState(false)
+  const [view, setView] = useState<"list" | "timeline">("list")
 
   const filtered = projects.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase())
@@ -36,7 +38,9 @@ export default function ProjectList({
     })
     if (!res.ok) return
     const created = await res.json()
-    setProjects([created, ...projects])
+    // POST returns the bare project (+_count) without the derived invoiced/paid
+    // totals or milestones; default them so the list and timeline render cleanly.
+    setProjects([{ invoiced: 0, paid: 0, milestones: [], ...created }, ...projects])
     setShowNewModal(false)
   }
 
@@ -86,6 +90,10 @@ export default function ProjectList({
           </div>
         </div>
 
+        <div className="mb-4">
+          <ViewToggle view={view} onChange={setView} />
+        </div>
+
         {/* Filters */}
         <div className="flex flex-col gap-3 mb-4">
           <input
@@ -108,7 +116,11 @@ export default function ProjectList({
           </select>
         </div>
 
+        {/* Timeline view */}
+        {view === "timeline" && <ProjectTimeline projects={filtered} />}
+
         {/* Cards */}
+        {view === "list" && (
         <div className="flex flex-col gap-3">
           {filtered.map((project) => (
             <Link
@@ -159,6 +171,7 @@ export default function ProjectList({
             </Link>
           ))}
         </div>
+        )}
 
         {showNewModal && (
           <NewProjectModal
@@ -188,12 +201,15 @@ export default function ProjectList({
             {projects.length} projekt · {totalParticipants} deltagare
           </div>
         </div>
-        <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Nytt projekt
-        </button>
+        <div className="flex items-center gap-3">
+          <ViewToggle view={view} onChange={setView} />
+          <button onClick={() => setShowNewModal(true)} className="btn btn-primary">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nytt projekt
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -218,7 +234,11 @@ export default function ProjectList({
         </select>
       </div>
 
-      {/* Table */}
+      {/* Timeline view */}
+      {view === "timeline" ? (
+        <ProjectTimeline projects={filtered} />
+      ) : (
+      /* Table */
       <div className="glass rounded-xl overflow-hidden">
         <table className="w-full">
           <thead className="bg-white/[0.05] border-b border-white/[0.08]">
@@ -299,6 +319,7 @@ export default function ProjectList({
           </tbody>
         </table>
       </div>
+      )}
 
       {showNewModal && (
         <NewProjectModal
@@ -306,6 +327,35 @@ export default function ProjectList({
           onCreate={handleCreate}
         />
       )}
+    </div>
+  )
+}
+
+function ViewToggle({
+  view,
+  onChange,
+}: {
+  view: "list" | "timeline"
+  onChange: (v: "list" | "timeline") => void
+}) {
+  return (
+    <div className="inline-flex p-1 bg-white/[0.03] border border-white/[0.10] rounded-lg">
+      <button
+        onClick={() => onChange("list")}
+        className={`px-3.5 py-2 text-sm font-medium rounded-md transition-colors ${
+          view === "list" ? "bg-white/[0.10] text-white" : "text-white/50 hover:text-white/80"
+        }`}
+      >
+        Lista
+      </button>
+      <button
+        onClick={() => onChange("timeline")}
+        className={`px-3.5 py-2 text-sm font-medium rounded-md transition-colors ${
+          view === "timeline" ? "bg-white/[0.10] text-white" : "text-white/50 hover:text-white/80"
+        }`}
+      >
+        Tidslinje
+      </button>
     </div>
   )
 }

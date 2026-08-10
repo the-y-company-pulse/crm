@@ -11,8 +11,10 @@ export default async function ProjectsPage() {
   const projectsRaw = await prisma.project.findMany({
     select: {
       id: true,
+      type: true,
       name: true,
       startDate: true,
+      endDate: true,
       format: true,
       maxParticipants: true,
       pricePerParticipant: true,
@@ -24,6 +26,12 @@ export default async function ProjectsPage() {
           invoicedAmount: true,
           isPaid: true,
         },
+      },
+      milestones: {
+        orderBy: [{ date: "asc" }, { order: "asc" }],
+      },
+      sessions: {
+        select: { date: true },
       },
       _count: {
         select: {
@@ -44,8 +52,10 @@ export default async function ProjectsPage() {
 
     return {
       id: project.id,
+      type: project.type,
       name: project.name,
       startDate: project.startDate,
+      endDate: project.endDate,
       format: project.format,
       maxParticipants: project.maxParticipants,
       pricePerParticipant: project.pricePerParticipant,
@@ -54,6 +64,8 @@ export default async function ProjectsPage() {
       createdAt: project.createdAt,
       invoiced,
       paid,
+      milestones: project.milestones,
+      sessions: project.sessions,
       _count: project._count,
     }
   })
