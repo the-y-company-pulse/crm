@@ -60,6 +60,10 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
       setProject(updated)
       setShowEditModal(false)
       router.refresh()
+    } else {
+      // Surface the failure instead of silently doing nothing.
+      console.error("Failed to update project:", await res.text())
+      alert("Kunde inte spara projektet. Kontrollera fälten och försök igen.")
     }
   }
 

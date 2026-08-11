@@ -30,6 +30,9 @@ export default async function ProjectDetailPage({
       sessions: {
         orderBy: { date: "asc" },
       },
+      milestones: {
+        orderBy: [{ date: "asc" }, { order: "asc" }],
+      },
       deals: {
         include: {
           owner: true,

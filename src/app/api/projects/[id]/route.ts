@@ -11,7 +11,7 @@ const UpdateProjectSchema = z.object({
   value: z.number().int().nonnegative().optional(),
   format: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
-  maxParticipants: z.number().int().positive().optional(),
+  maxParticipants: z.number().int().nonnegative().optional(),
   pricePerParticipant: z.number().int().nonnegative().optional(),
   status: z.enum(["planned", "open", "full", "completed"]).optional(),
   isFavorite: z.boolean().optional(),
