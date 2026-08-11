@@ -19,8 +19,10 @@ export default async function HomePage() {
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const yearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+  const yearEnd = new Date(Date.UTC(now.getUTCFullYear() + 1, 0, 1));
 
-  const [deals, stages, users, pendingEmailCount, favoriteProjects, wonThisMonth] = await Promise.all([
+  const [deals, stages, users, pendingEmailCount, favoriteProjects, wonThisMonth, wonThisYear] = await Promise.all([
     prisma.deal.findMany({
       include: {
         owner: true,
@@ -43,6 +45,10 @@ export default async function HomePage() {
       where: { status: "won", wonAt: { gte: monthStart, lt: monthEnd } },
       select: { value: true, ownerId: true },
     }),
+    prisma.deal.findMany({
+      where: { status: "won", wonAt: { gte: yearStart, lt: yearEnd } },
+      select: { value: true, ownerId: true },
+    }),
   ]);
 
   // Serialize Date → string for client component
@@ -59,19 +65,23 @@ export default async function HomePage() {
     max: p.maxParticipants,
   }));
 
-  const partnerSales: PartnerSales[] = users
-    .map((u) => {
-      const mine = wonThisMonth.filter((d) => d.ownerId === u.id);
-      return {
-        id: u.id,
-        name: u.name,
-        color: u.color,
-        initial: u.initial,
-        value: mine.reduce((s, d) => s + d.value, 0),
-        count: mine.length,
-      };
-    })
-    .sort((a, b) => b.value - a.value);
+  const partnerSalesFrom = (won: { value: number; ownerId: string }[]): PartnerSales[] =>
+    users
+      .map((u) => {
+        const mine = won.filter((d) => d.ownerId === u.id);
+        return {
+          id: u.id,
+          name: u.name,
+          color: u.color,
+          initial: u.initial,
+          value: mine.reduce((s, d) => s + d.value, 0),
+          count: mine.length,
+        };
+      })
+      .sort((a, b) => b.value - a.value);
+
+  const partnerSales = partnerSalesFrom(wonThisMonth);
+  const partnerSalesYear = partnerSalesFrom(wonThisYear);
 
   return (
     <main className="min-h-screen">
@@ -79,7 +89,9 @@ export default async function HomePage() {
       <PipelineDashboard
         favorites={favorites}
         partnerSales={partnerSales}
+        partnerSalesYear={partnerSalesYear}
         monthLabel={MONTH_NAMES[now.getUTCMonth()]}
+        yearLabel={String(now.getUTCFullYear())}
       />
       <Kanban
         initialDeals={serialize(deals) as unknown as Deal[]}

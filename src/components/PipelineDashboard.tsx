@@ -25,18 +25,45 @@ export type PartnerSales = {
 type Props = {
   favorites: FavoriteProject[];
   partnerSales: PartnerSales[];
+  partnerSalesYear: PartnerSales[];
   monthLabel: string;
+  yearLabel: string;
 };
 
 const fmtSEK = (v: number) => v.toLocaleString("sv-SE") + " SEK";
 
-export default function PipelineDashboard({ favorites, partnerSales, monthLabel }: Props) {
+export default function PipelineDashboard({
+  favorites,
+  partnerSales,
+  partnerSalesYear,
+  monthLabel,
+  yearLabel,
+}: Props) {
   const [collapsed, setCollapsed] = useState(false);
 
   // Nothing favorited and no sales yet → keep the toolbar clean, render nothing.
-  if (favorites.length === 0 && partnerSales.every((p) => p.value === 0)) return null;
+  if (
+    favorites.length === 0 &&
+    partnerSales.every((p) => p.value === 0) &&
+    partnerSalesYear.every((p) => p.value === 0)
+  )
+    return null;
 
   const monthTotal = partnerSales.reduce((s, p) => s + p.value, 0);
+  const yearTotal = partnerSalesYear.reduce((s, p) => s + p.value, 0);
+
+  // Merge month + year per partner into one table, sorted by yearly value.
+  const yearById = new Map(partnerSalesYear.map((p) => [p.id, p]));
+  const partnerRows = partnerSales
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      color: m.color,
+      initial: m.initial,
+      monthValue: m.value,
+      yearValue: yearById.get(m.id)?.value ?? 0,
+    }))
+    .sort((a, b) => b.yearValue - a.yearValue);
 
   return (
     <div className="px-4 md:px-8 pt-4 md:pt-5">
@@ -51,7 +78,7 @@ export default function PipelineDashboard({ favorites, partnerSales, monthLabel 
             </svg>
             <span className="font-display text-base text-white">Översikt</span>
             <span className="text-xs text-white/40 hidden sm:inline">
-              · {favorites.length} fokusprogram · {fmtSEK(monthTotal)} i {monthLabel}
+              · {favorites.length} fokusprogram · {fmtSEK(monthTotal)} i {monthLabel} · {fmtSEK(yearTotal)} {yearLabel}
             </span>
           </div>
           <svg
@@ -82,13 +109,17 @@ export default function PipelineDashboard({ favorites, partnerSales, monthLabel 
               )}
             </div>
 
-            {/* Sales this month per partner */}
+            {/* Sales per partner — this month and this year */}
             <div className="p-4 md:p-5">
-              <h3 className="text-[11px] uppercase tracking-wider text-white/40 mb-3">
-                Försäljning {monthLabel} · per partner
-              </h3>
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="text-[11px] uppercase tracking-wider text-white/40 flex-1">
+                  Försäljning · per partner
+                </h3>
+                <span className="w-24 text-right text-[10px] uppercase tracking-wider text-white/30">{monthLabel}</span>
+                <span className="w-24 text-right text-[10px] uppercase tracking-wider text-white/30">{yearLabel}</span>
+              </div>
               <ul className="flex flex-col gap-2">
-                {partnerSales.map((u) => (
+                {partnerRows.map((u) => (
                   <li key={u.id} className="flex items-center gap-3">
                     <span
                       className="owner-dot w-6 h-6 text-xs flex-shrink-0"
@@ -97,19 +128,18 @@ export default function PipelineDashboard({ favorites, partnerSales, monthLabel 
                       {u.initial}
                     </span>
                     <span className="text-sm text-white/70 flex-1 truncate">{u.name}</span>
-                    {u.count > 0 && (
-                      <span className="text-xs text-white/35 whitespace-nowrap">
-                        {u.count} {u.count === 1 ? "affär" : "affärer"}
-                      </span>
-                    )}
-                    <span className={`text-sm font-medium whitespace-nowrap ${u.value > 0 ? "text-white" : "text-white/30"}`}>
-                      {fmtSEK(u.value)}
+                    <span className={`w-24 text-right text-sm whitespace-nowrap ${u.monthValue > 0 ? "text-white" : "text-white/30"}`}>
+                      {fmtSEK(u.monthValue)}
+                    </span>
+                    <span className={`w-24 text-right text-sm font-medium whitespace-nowrap ${u.yearValue > 0 ? "text-white" : "text-white/30"}`}>
+                      {fmtSEK(u.yearValue)}
                     </span>
                   </li>
                 ))}
                 <li className="flex items-center gap-3 mt-1 pt-2 border-t border-white/[0.08]">
-                  <span className="text-sm text-white/50 flex-1">Totalt {monthLabel}</span>
-                  <span className="text-sm font-semibold text-neon whitespace-nowrap">{fmtSEK(monthTotal)}</span>
+                  <span className="text-sm text-white/50 flex-1">Totalt</span>
+                  <span className="w-24 text-right text-sm font-semibold text-white/80 whitespace-nowrap">{fmtSEK(monthTotal)}</span>
+                  <span className="w-24 text-right text-sm font-semibold text-neon whitespace-nowrap">{fmtSEK(yearTotal)}</span>
                 </li>
               </ul>
             </div>
