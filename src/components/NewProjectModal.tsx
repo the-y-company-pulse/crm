@@ -13,6 +13,7 @@ type Props = {
     name: string
     startDate: string
     endDate: string | null
+    value: number
     format: string | null
     location: string | null
     maxParticipants: number
@@ -28,6 +29,7 @@ export default function NewProjectModal({ onClose, onCreate }: Props) {
   const [name, setName] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+  const [value, setValue] = useState("")
   const [format, setFormat] = useState("")
   const [location, setLocation] = useState("")
   const [maxParticipants, setMaxParticipants] = useState("16")
@@ -68,6 +70,7 @@ export default function NewProjectModal({ onClose, onCreate }: Props) {
         name: name.trim(),
         startDate: new Date(startDate).toISOString(),
         endDate: endDate ? new Date(endDate).toISOString() : null,
+        value: parseInt(value.replace(/\D/g, ""), 10) || 0,
         format: isCourse ? format.trim() || null : null,
         location: isCourse ? location.trim() || null : null,
         maxParticipants: isCourse ? parseInt(maxParticipants, 10) || 0 : 0,
@@ -147,14 +150,25 @@ export default function NewProjectModal({ onClose, onCreate }: Props) {
               </Field>
             </div>
 
-            <Field label="Status">
-              <select className="input" value={status} onChange={(e) => setStatus(e.target.value as any)}>
-                <option value="planned" className="bg-ink-900">Planerad</option>
-                <option value="open" className="bg-ink-900">Öppen</option>
-                {isCourse && <option value="full" className="bg-ink-900">Full</option>}
-                <option value="completed" className="bg-ink-900">Genomförd</option>
-              </select>
-            </Field>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field label="Status">
+                <select className="input" value={status} onChange={(e) => setStatus(e.target.value as any)}>
+                  <option value="planned" className="bg-ink-900">Planerad</option>
+                  <option value="open" className="bg-ink-900">Öppen</option>
+                  {isCourse && <option value="full" className="bg-ink-900">Full</option>}
+                  <option value="completed" className="bg-ink-900">Genomförd</option>
+                </select>
+              </Field>
+              <Field label="Affärsvärde (SEK)">
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  placeholder="0"
+                />
+              </Field>
+            </div>
 
             {/* Course-only fields */}
             {isCourse && (

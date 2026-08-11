@@ -8,6 +8,7 @@ const CreateProjectSchema = z.object({
   name: z.string().min(1),
   startDate: z.string().datetime(),
   endDate: z.string().datetime().nullable().optional(),
+  value: z.number().int().nonnegative().default(0),
   format: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   // Course-only fields — optional so an engagement can skip them.
@@ -94,6 +95,7 @@ export async function POST(req: NextRequest) {
       name: parsed.data.name,
       startDate: new Date(parsed.data.startDate),
       endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
+      value: parsed.data.value,
       format: parsed.data.format,
       location: parsed.data.location,
       maxParticipants: parsed.data.maxParticipants,

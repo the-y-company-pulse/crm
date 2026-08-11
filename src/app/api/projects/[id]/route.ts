@@ -8,6 +8,7 @@ const UpdateProjectSchema = z.object({
   name: z.string().min(1).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().nullable().optional(),
+  value: z.number().int().nonnegative().optional(),
   format: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   maxParticipants: z.number().int().positive().optional(),
@@ -76,6 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (parsed.data.name !== undefined) data.name = parsed.data.name
   if (parsed.data.startDate !== undefined) data.startDate = new Date(parsed.data.startDate)
   if (parsed.data.endDate !== undefined) data.endDate = parsed.data.endDate ? new Date(parsed.data.endDate) : null
+  if (parsed.data.value !== undefined) data.value = parsed.data.value
   if (parsed.data.format !== undefined) data.format = parsed.data.format
   if (parsed.data.location !== undefined) data.location = parsed.data.location
   if (parsed.data.maxParticipants !== undefined) data.maxParticipants = parsed.data.maxParticipants

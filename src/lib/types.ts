@@ -154,6 +154,7 @@ export type Project = {
   name: string
   startDate: string
   endDate: string | null
+  value: number
   format: string | null
   location: string | null
   maxParticipants: number

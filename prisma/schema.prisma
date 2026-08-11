@@ -231,6 +231,7 @@ model Project {
   name                String
   startDate           DateTime
   endDate             DateTime? // planned end — draws the bar on the timeline/gantt view
+  value               Int      @default(0) // affärsvärde (SEK) — total contract value of the project
   format              String?  @db.Text
   location            String?  // Physical location for sessions
   maxParticipants     Int

@@ -378,12 +378,12 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
             </div>
           </div>
           <div className="glass rounded-xl p-6">
-            <div className="text-white/40 text-sm mb-2">Pipeline-värde</div>
-            <div className="text-2xl font-bold text-neon">{fmt(pipelineValue)}</div>
+            <div className="text-white/40 text-sm mb-2">Affärsvärde</div>
+            <div className="text-2xl font-bold text-white">{fmt(project.value)}</div>
           </div>
           <div className="glass rounded-xl p-6">
-            <div className="text-white/40 text-sm mb-2">Fakturerat</div>
-            <div className="text-2xl font-bold text-white">{fmt(totalValue)}</div>
+            <div className="text-white/40 text-sm mb-2">Pipeline-värde</div>
+            <div className="text-2xl font-bold text-neon">{fmt(pipelineValue)}</div>
           </div>
           <div className="glass rounded-xl p-6">
             <div className="text-white/40 text-sm mb-2">Kopplade deals</div>
@@ -407,7 +407,7 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
           )}
         </div>
         {isCourse && (
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
             <div>
               <div className="text-white/40 text-sm mb-1">Format</div>
               <div className="text-white">{project.format || "—"}</div>
@@ -415,6 +415,10 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
             <div>
               <div className="text-white/40 text-sm mb-1">Pris per deltagare</div>
               <div className="text-white">{fmt(project.pricePerParticipant)}</div>
+            </div>
+            <div>
+              <div className="text-white/40 text-sm mb-1">Affärsvärde</div>
+              <div className="text-white">{fmt(project.value)}</div>
             </div>
           </div>
         )}
