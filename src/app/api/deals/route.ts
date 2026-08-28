@@ -74,6 +74,16 @@ export async function POST(req: NextRequest) {
   // Handle contact: create if new, link if existing
   if (parsed.data.contactId) {
     dealData.contactId = parsed.data.contactId;
+    // Also store provided contact details on the linked contact
+    const contactUpdate: any = {};
+    if (parsed.data.email?.trim()) contactUpdate.email = parsed.data.email.trim();
+    if (parsed.data.phone?.trim()) contactUpdate.phone = parsed.data.phone.trim();
+    if (Object.keys(contactUpdate).length > 0) {
+      await prisma.contact.update({
+        where: { id: parsed.data.contactId },
+        data: contactUpdate,
+      });
+    }
   } else if (parsed.data.contact) {
     // Parse name
     const fullName = parsed.data.contact.trim();

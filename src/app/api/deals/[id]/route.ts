@@ -70,6 +70,18 @@ export async function PATCH(
   // Handle contact: create if new, link if existing, or clear
   if (parsed.data.contactId !== undefined) {
     updateData.contactId = parsed.data.contactId;
+    // Also store provided contact details on the linked contact
+    if (parsed.data.contactId) {
+      const contactUpdate: any = {};
+      if (parsed.data.email?.trim()) contactUpdate.email = parsed.data.email.trim();
+      if (parsed.data.phone?.trim()) contactUpdate.phone = parsed.data.phone.trim();
+      if (Object.keys(contactUpdate).length > 0) {
+        await prisma.contact.update({
+          where: { id: parsed.data.contactId },
+          data: contactUpdate,
+        });
+      }
+    }
   } else if (parsed.data.contact !== undefined) {
     if (parsed.data.contact) {
       // Parse name

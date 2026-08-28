@@ -19,6 +19,8 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
   const [companyName, setCompanyName] = useState<string | null>(deal.company ?? null);
   const [contactId, setContactId] = useState<string | null>((deal as any).contactId ?? null);
   const [contactName, setContactName] = useState<string | null>(deal.contact ?? null);
+  const [email, setEmail] = useState((deal as any).contact_rel?.email ?? deal.email ?? "");
+  const [phone, setPhone] = useState((deal as any).contact_rel?.phone ?? deal.phone ?? "");
   const [value, setValue] = useState(deal.value.toString());
   const [ownerId, setOwnerId] = useState(deal.ownerId);
   const [projectId, setProjectId] = useState<string | null>(deal.projectId ?? null);
@@ -37,6 +39,8 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
           company: companyName,
           contactId,
           contact: contactName,
+          email: email.trim() || null,
+          phone: phone.trim() || null,
           value: parseInt(value.replace(/\s/g, ""), 10) || 0,
           ownerId,
           projectId,
@@ -107,12 +111,46 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
               </label>
               <ContactAutocomplete
                 value={contactId}
-                onChange={(id, name) => {
+                onChange={(id, name, details) => {
                   setContactId(id);
                   setContactName(name);
+                  if (details) {
+                    setEmail(details.email ?? "");
+                    setPhone(details.phone ?? "");
+                  }
                 }}
                 companyId={companyId}
                 placeholder="Sök eller skapa kontakt..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
+                E-post
+              </label>
+              <input
+                type="email"
+                inputMode="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="namn@foretag.se"
+                className="input w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
+                Telefon
+              </label>
+              <input
+                type="tel"
+                inputMode="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="070-123 45 67"
+                className="input w-full"
               />
             </div>
           </div>

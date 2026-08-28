@@ -17,6 +17,8 @@ type Props = {
     company: string | null;
     contactId: string | null;
     contact: string | null;
+    email: string | null;
+    phone: string | null;
     value: number;
     stageId: string;
     ownerId: string;
@@ -31,6 +33,8 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [contactId, setContactId] = useState<string | null>(null);
   const [contactName, setContactName] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [value, setValue] = useState("");
   const [stageId, setStageId] = useState(openStages[0]?.id ?? stages[0]?.id ?? "");
   const [ownerId, setOwnerId] = useState(currentUserId);
@@ -47,6 +51,8 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
         company: companyName,
         contactId,
         contact: contactName,
+        email: email.trim() || null,
+        phone: phone.trim() || null,
         value: parseInt(value.replace(/\D/g, ""), 10) || 0,
         stageId,
         ownerId,
@@ -87,13 +93,27 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
               <Field label="Kontaktperson">
                 <ContactAutocomplete
                   value={contactId}
-                  onChange={(id, name) => {
+                  onChange={(id, name, details) => {
                     setContactId(id);
                     setContactName(name);
+                    if (details) {
+                      setEmail(details.email ?? "");
+                      setPhone(details.phone ?? "");
+                    }
                   }}
                   companyId={companyId}
                   placeholder="Sök eller skapa kontakt..."
                 />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field label="E-post (valfritt)">
+                <input className="input" type="email" inputMode="email" value={email}
+                       onChange={(e) => setEmail(e.target.value)} placeholder="namn@foretag.se" />
+              </Field>
+              <Field label="Telefon (valfritt)">
+                <input className="input" type="tel" inputMode="tel" value={phone}
+                       onChange={(e) => setPhone(e.target.value)} placeholder="070-123 45 67" />
               </Field>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
