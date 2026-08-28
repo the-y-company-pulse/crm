@@ -13,6 +13,7 @@ const UpdateDealSchema = z.object({
   contact: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
+  contactTitle: z.string().nullable().optional(),
   value: z.number().int().nonnegative().optional(),
   notes: z.string().nullable().optional(),
   stageId: z.string().min(1).optional(),
@@ -75,6 +76,7 @@ export async function PATCH(
       const contactUpdate: any = {};
       if (parsed.data.email?.trim()) contactUpdate.email = parsed.data.email.trim();
       if (parsed.data.phone?.trim()) contactUpdate.phone = parsed.data.phone.trim();
+      if (parsed.data.contactTitle?.trim()) contactUpdate.title = parsed.data.contactTitle.trim();
       if (Object.keys(contactUpdate).length > 0) {
         await prisma.contact.update({
           where: { id: parsed.data.contactId },
@@ -98,6 +100,7 @@ export async function PATCH(
           fullName,
           email: parsed.data.email,
           phone: parsed.data.phone,
+          title: parsed.data.contactTitle?.trim() || null,
           companyId: updateData.companyId || null,
         },
       });

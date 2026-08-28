@@ -19,6 +19,7 @@ type Props = {
     contact: string | null;
     email: string | null;
     phone: string | null;
+    contactTitle: string | null;
     value: number;
     stageId: string;
     ownerId: string;
@@ -35,6 +36,7 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
   const [contactName, setContactName] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [contactTitle, setContactTitle] = useState("");
   const [value, setValue] = useState("");
   const [stageId, setStageId] = useState(openStages[0]?.id ?? stages[0]?.id ?? "");
   const [ownerId, setOwnerId] = useState(currentUserId);
@@ -53,6 +55,7 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
         contact: contactName,
         email: email.trim() || null,
         phone: phone.trim() || null,
+        contactTitle: contactTitle.trim() || null,
         value: parseInt(value.replace(/\D/g, ""), 10) || 0,
         stageId,
         ownerId,
@@ -99,6 +102,7 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
                     if (details) {
                       setEmail(details.email ?? "");
                       setPhone(details.phone ?? "");
+                      setContactTitle(details.title ?? "");
                     }
                   }}
                   companyId={companyId}
@@ -116,6 +120,10 @@ export default function NewDealModal({ stages, users, currentUserId, onClose, on
                        onChange={(e) => setPhone(e.target.value)} placeholder="070-123 45 67" />
               </Field>
             </div>
+            <Field label="Roll (valfritt)">
+              <input className="input" type="text" value={contactTitle}
+                     onChange={(e) => setContactTitle(e.target.value)} placeholder="T.ex. VD, HR-chef..." />
+            </Field>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Field label="Värde (SEK)">
                 <input className="input" inputMode="numeric" value={value}

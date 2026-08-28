@@ -20,7 +20,7 @@ type Props = {
   onChange: (
     contactId: string | null,
     contactName: string | null,
-    details?: { email: string | null; phone: string | null } | null
+    details?: { email: string | null; phone: string | null; title: string | null } | null
   ) => void
   companyId?: string | null // Filter by company
   placeholder?: string
@@ -101,7 +101,7 @@ export default function ContactAutocomplete({
   function handleSelect(contact: Contact) {
     setSelectedContact(contact)
     setQuery(contact.fullName)
-    onChange(contact.id, contact.fullName, { email: contact.email, phone: contact.phone })
+    onChange(contact.id, contact.fullName, { email: contact.email, phone: contact.phone, title: contact.title })
     setShowDropdown(false)
   }
 

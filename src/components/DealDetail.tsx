@@ -189,7 +189,14 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
                 {((deal as any).company_rel?.name || deal.company) && ((deal as any).contact_rel?.fullName || deal.contact) && (
                   <span>·</span>
                 )}
-                {(deal as any).contact_rel?.fullName || deal.contact}
+                {((deal as any).contact_rel?.fullName || deal.contact) && (
+                  <span>
+                    {(deal as any).contact_rel?.fullName || deal.contact}
+                    {(deal as any).contact_rel?.title && (
+                      <span className="text-white/35"> · {(deal as any).contact_rel.title}</span>
+                    )}
+                  </span>
+                )}
               </div>
             {((deal as any).contact_rel?.email || (deal as any).contact_rel?.phone || deal.email || deal.phone) && (
               <div className="flex flex-wrap items-center gap-3 mt-1.5">

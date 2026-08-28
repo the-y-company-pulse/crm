@@ -33,6 +33,7 @@ const CreateDealSchema = z.object({
   contact: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
+  contactTitle: z.string().optional().nullable(),
   value: z.number().int().nonnegative().default(0),
   stageId: z.string().min(1),
   ownerId: z.string().min(1),
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
     const contactUpdate: any = {};
     if (parsed.data.email?.trim()) contactUpdate.email = parsed.data.email.trim();
     if (parsed.data.phone?.trim()) contactUpdate.phone = parsed.data.phone.trim();
+    if (parsed.data.contactTitle?.trim()) contactUpdate.title = parsed.data.contactTitle.trim();
     if (Object.keys(contactUpdate).length > 0) {
       await prisma.contact.update({
         where: { id: parsed.data.contactId },
@@ -99,6 +101,7 @@ export async function POST(req: NextRequest) {
         fullName,
         email: parsed.data.email,
         phone: parsed.data.phone,
+        title: parsed.data.contactTitle?.trim() || null,
         companyId: dealData.companyId || null,
       },
     });

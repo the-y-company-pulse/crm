@@ -21,6 +21,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
   const [contactName, setContactName] = useState<string | null>(deal.contact ?? null);
   const [email, setEmail] = useState((deal as any).contact_rel?.email ?? deal.email ?? "");
   const [phone, setPhone] = useState((deal as any).contact_rel?.phone ?? deal.phone ?? "");
+  const [contactTitle, setContactTitle] = useState((deal as any).contact_rel?.title ?? "");
   const [value, setValue] = useState(deal.value.toString());
   const [ownerId, setOwnerId] = useState(deal.ownerId);
   const [projectId, setProjectId] = useState<string | null>(deal.projectId ?? null);
@@ -41,6 +42,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
           contact: contactName,
           email: email.trim() || null,
           phone: phone.trim() || null,
+          contactTitle: contactTitle.trim() || null,
           value: parseInt(value.replace(/\s/g, ""), 10) || 0,
           ownerId,
           projectId,
@@ -117,6 +119,7 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
                   if (details) {
                     setEmail(details.email ?? "");
                     setPhone(details.phone ?? "");
+                    setContactTitle(details.title ?? "");
                   }
                 }}
                 companyId={companyId}
@@ -153,6 +156,19 @@ export default function EditDealModal({ deal, users, onClose, onSaved }: Props) 
                 className="input w-full"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-white/50 mb-2">
+              Roll
+            </label>
+            <input
+              type="text"
+              value={contactTitle}
+              onChange={(e) => setContactTitle(e.target.value)}
+              placeholder="T.ex. VD, HR-chef..."
+              className="input w-full"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

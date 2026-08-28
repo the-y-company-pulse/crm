@@ -115,6 +115,7 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
     contact: string | null;
     email: string | null;
     phone: string | null;
+    contactTitle: string | null;
     value: number;
     stageId: string;
     ownerId: string;
