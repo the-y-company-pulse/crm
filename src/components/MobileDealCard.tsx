@@ -33,7 +33,10 @@ export default function MobileDealCard({ deal, onOpen, onMove, stages, isSearchH
         isSearchHit ? "is-search-hit" : "",
         isSearchDim ? "is-search-dim" : "",
       ].join(" ")}
-      style={{ borderLeftColor: ownerBg(deal.owner?.color), borderLeftWidth: '4px' }}
+      style={{
+        borderLeftColor: result === "won" ? "rgb(var(--c-won))" : result === "lost" ? "rgb(var(--c-lost))" : ownerBg(deal.owner?.color),
+        borderLeftWidth: '4px',
+      }}
     >
       {/* Card content - klickbar för att öppna */}
       <div onClick={onOpen} className="cursor-pointer touch-target">

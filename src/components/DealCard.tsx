@@ -37,7 +37,8 @@ export default function DealCard({ deal, isSelected, isOverlay, onClick, isSearc
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    borderLeftColor: ownerColor,
+    // Won/lost deals take the outcome colour; the owner still shows on the dot
+    borderLeftColor: result === "won" ? "rgb(var(--c-won))" : result === "lost" ? "rgb(var(--c-lost))" : ownerColor,
   };
 
   return (

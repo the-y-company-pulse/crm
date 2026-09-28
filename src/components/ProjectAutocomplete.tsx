@@ -62,6 +62,8 @@ export default function ProjectAutocomplete({
       setResults([])
       return
     }
+    // Query was just filled in by picking a suggestion — don't search (and reopen) again
+    if (selectedProject && query === selectedProject.name) return
 
     const timer = setTimeout(async () => {
       setLoading(true)
@@ -78,7 +80,7 @@ export default function ProjectAutocomplete({
     }, 300) // Debounce
 
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, selectedProject])
 
   // Click outside to close
   useEffect(() => {

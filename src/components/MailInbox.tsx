@@ -61,7 +61,7 @@ export default function MailInbox({ emails: initialEmails }: { emails: EmailWith
       ) : (
         <div className="space-y-4">
           {emails.map((email) => (
-            <div key={email.id} className="glass rounded-xl p-6">
+            <div key={email.id} className="glass rounded-xl p-6 relative focus-within:z-20">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="text-white font-medium mb-1">{email.subject}</div>

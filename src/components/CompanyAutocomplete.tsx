@@ -50,6 +50,8 @@ export default function CompanyAutocomplete({
       setResults([])
       return
     }
+    // Query was just filled in by picking a suggestion — don't search (and reopen) again
+    if (selectedCompany && query === selectedCompany.name) return
 
     const timer = setTimeout(async () => {
       setLoading(true)
@@ -69,7 +71,7 @@ export default function CompanyAutocomplete({
     }, 300) // Debounce
 
     return () => clearTimeout(timer)
-  }, [query, isUserTyping])
+  }, [query, isUserTyping, selectedCompany])
 
   // Click outside to close
   useEffect(() => {

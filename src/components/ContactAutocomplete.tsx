@@ -62,6 +62,8 @@ export default function ContactAutocomplete({
       setResults([])
       return
     }
+    // Query was just filled in by picking a suggestion — don't search (and reopen) again
+    if (selectedContact && query === selectedContact.fullName) return
 
     const timer = setTimeout(async () => {
       setLoading(true)
@@ -85,7 +87,7 @@ export default function ContactAutocomplete({
     }, 300) // Debounce
 
     return () => clearTimeout(timer)
-  }, [query, companyId, isUserTyping])
+  }, [query, companyId, isUserTyping, selectedContact])
 
   // Click outside to close
   useEffect(() => {

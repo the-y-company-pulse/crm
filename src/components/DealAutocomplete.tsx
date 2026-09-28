@@ -29,6 +29,8 @@ export default function DealAutocomplete({ value, onChange, placeholder = "Sök 
       setResults([])
       return
     }
+    // Query was just filled in by picking a suggestion — don't search (and reopen) again
+    if (selectedDeal && query === selectedDeal.title) return
 
     const timer = setTimeout(async () => {
       setLoading(true)
@@ -45,7 +47,7 @@ export default function DealAutocomplete({ value, onChange, placeholder = "Sök 
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, selectedDeal])
 
   // Click outside
   useEffect(() => {
