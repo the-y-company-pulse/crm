@@ -58,8 +58,8 @@ export default function StageColumn({
         isWon ? "relative" : ""
       }`}
       style={isWon ? {
-        background: "linear-gradient(135deg, rgba(222, 255, 0, 0.08) 0%, rgba(222, 255, 0, 0.02) 100%)",
-        border: "1px solid rgba(222, 255, 0, 0.2)",
+        background: "linear-gradient(135deg, rgb(var(--c-neon) / 0.08) 0%, rgb(var(--c-neon) / 0.02) 100%)",
+        border: "1px solid rgb(var(--c-neon) / 0.2)",
         borderRadius: "12px",
         padding: "8px",
       } : undefined}

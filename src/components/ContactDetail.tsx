@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { ownerBg, ownerText } from "@/lib/ownerColor";
 
 type Contact = {
   id: string
@@ -282,9 +283,9 @@ export default function ContactDetail({
           ) : (
             <div className="space-y-2">
               {contact.deals.map((deal) => {
-                const ownerColor = deal.owner.color
+                const ownerColor = ownerBg(deal.owner.color)
                 const ownerInitial = deal.owner.initial
-                const ownerTextColor = ownerColor === "#deff00" ? "#0a1420" : "white"
+                const ownerTextColor = ownerText(ownerColor)
 
                 return (
                   <div

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from "@/lib/types";
+import { ownerBg, ownerText } from "@/lib/ownerColor";
 
 export type FavoriteProject = {
   id: string;
@@ -123,7 +124,7 @@ export default function PipelineDashboard({
                   <li key={u.id} className="flex items-center gap-3">
                     <span
                       className="owner-dot w-6 h-6 text-xs flex-shrink-0"
-                      style={{ background: u.color, color: u.color === "#deff00" ? "#0a1420" : "white" }}
+                      style={{ background: ownerBg(u.color), color: ownerText(u.color) }}
                     >
                       {u.initial}
                     </span>
@@ -168,7 +169,7 @@ function FavoriteRow({ project }: { project: FavoriteProject }) {
           <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${pct}%`, background: full ? "#4ade80" : "#deff00" }}
+              style={{ width: `${pct}%`, background: full ? "#4ade80" : "rgb(var(--c-neon))" }}
             />
           </div>
           <span

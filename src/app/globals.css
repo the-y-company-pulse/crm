@@ -2,13 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Theme tokens ───────────────────────────────────────────────
+   RGB channels consumed by tailwind.config.ts. Dark is the default;
+   [data-theme="light"] on <html> inverts it. Any element can opt back
+   into dark with data-theme="dark" (e.g. the nav band, so the neon
+   brand yellow always sits on dark blue). */
+:root,
+[data-theme="dark"] {
+  --c-white: 255 255 255;   /* foreground */
+  --c-navy: 43 57 79;       /* raised surfaces */
+  --c-neon: 222 255 0;      /* accent */
+  --c-ink-950: 8 15 26;     /* page background */
+  --c-ink-900: 12 22 34;
+  --c-ink-850: 16 25 42;
+  --c-ink-800: 23 34 52;
+  --c-ink-700: 31 44 63;
+  --ink-glow: radial-gradient(ellipse 90% 50% at 50% -10%, rgba(222,255,0,0.06), transparent 60%),
+              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(43,57,79,0.4), transparent 60%);
+  --neon-glow: 0 0 24px -4px rgba(222, 255, 0, 0.35);
+  --card-from: #2b394f;
+  --card-to: #1f2c3f;
+  --card-hover-from: #34445f;
+  --card-hover-to: #283549;
+  --surface-shadow: none;
+  --c-owner-navy: 148 173 186;       /* brand navy partner colour → steel on dark */
+  --c-owner-navy-text: 10 20 32;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --c-white: 43 57 79;      /* navy text */
+  --c-navy: 255 255 255;    /* white cards on grey-white */
+  --c-neon: 30 58 110;      /* deep blue accent (yellow is unreadable on light) */
+  --c-ink-950: 245 244 244; /* brand offwhite */
+  --c-ink-900: 239 238 237;
+  --c-ink-850: 234 233 232;
+  --c-ink-800: 226 225 224;
+  --c-ink-700: 214 213 212;
+  --ink-glow: radial-gradient(ellipse 90% 50% at 50% -10%, rgba(148,173,186,0.18), transparent 60%);
+  --neon-glow: 0 4px 14px -4px rgba(30, 58, 110, 0.35);
+  --card-from: #ffffff;
+  --card-to: #fbfaf9;
+  --card-hover-from: #ffffff;
+  --card-hover-to: #f4f6f9;
+  --surface-shadow: 0 1px 2px rgba(43,57,79,0.06), 0 2px 8px -2px rgba(43,57,79,0.08);
+  --c-owner-navy: 43 57 79;
+  --c-owner-navy-text: 255 255 255;
+  color-scheme: light;
+}
+
+[data-theme] { color: rgb(var(--c-white)); }
+
+/* Dark-blue band behind the top nav in light mode */
+[data-theme="light"] .nav-band { background-color: #2b394f; }
+
 @layer base {
   html, body {
     height: 100%;
   }
   body {
     font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, var(--font-sans), system-ui, sans-serif;
-    background-color: #080f1a; /* Djupt mörk bakgrund */
+    background-color: rgb(var(--c-ink-950));
     background-attachment: fixed;
   }
   h1, h2, h3, .font-display {
@@ -19,44 +73,47 @@
     font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     font-weight: 600;
   }
-  /* Subtle dark scrollbar */
+  /* Subtle scrollbar */
   ::-webkit-scrollbar { height: 10px; width: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--c-white) / 0.08); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-white) / 0.18); }
 }
 
 @layer components {
   /* Glass card surface — used for columns, panels, modals */
   .glass {
     @apply bg-navy/80 border border-white/[0.15] backdrop-blur-sm;
+    box-shadow: var(--surface-shadow);
   }
   .glass-strong {
     @apply bg-navy border border-white/[0.20];
+    box-shadow: var(--surface-shadow);
   }
 
   /* Deal card */
   .y-card {
     @apply border border-white/[0.15] rounded-lg cursor-grab transition-all;
-    background: linear-gradient(135deg, #2b394f 0%, #1f2c3f 100%);
+    background: linear-gradient(135deg, var(--card-from) 0%, var(--card-to) 100%);
     border-left-width: 4px;
+    box-shadow: var(--surface-shadow);
   }
   .y-card:hover {
-    background: linear-gradient(135deg, #34445f 0%, #283549 100%);
+    background: linear-gradient(135deg, var(--card-hover-from) 0%, var(--card-hover-to) 100%);
     @apply border-white/[0.30];
   }
   .y-card.is-dragging { @apply opacity-40; }
-  .y-card.is-selected { box-shadow: 0 0 0 2px #deff00; }
+  .y-card.is-selected { box-shadow: 0 0 0 2px rgb(var(--c-neon)); }
 
   .is-search-hit {
-    box-shadow: 0 0 0 2px #deff00, 0 0 20px rgba(222, 255, 0, 0.4);
-    border-color: rgba(222, 255, 0, 0.6) !important;
+    box-shadow: 0 0 0 2px rgb(var(--c-neon)), 0 0 20px rgb(var(--c-neon) / 0.4);
+    border-color: rgb(var(--c-neon) / 0.6) !important;
   }
   .is-search-dim { opacity: 0.25; }
   .is-search-dim:hover { opacity: 0.6; }
 
   /* Clickable month column in the statistik chart */
-  .stat-month-hit:hover { fill: rgba(255, 255, 255, 0.06); }
+  .stat-month-hit:hover { fill: rgb(var(--c-white) / 0.06); }
 
   /* Overdue reminder pill — gentle pulse to draw the eye */
   .reminder-overdue { animation: reminderPulse 2s ease-in-out infinite; }
@@ -68,7 +125,7 @@
   /* Kanban column */
   .y-col {
     @apply rounded-xl p-4 min-h-[400px] flex flex-col border border-white/[0.10];
-    background: linear-gradient(180deg, rgba(43,57,79,0.4) 0%, rgba(31,44,63,0.3) 100%);
+    background: linear-gradient(180deg, rgb(var(--c-navy) / 0.4) 0%, rgb(var(--c-ink-700) / 0.3) 100%);
   }
   .y-col.is-over {
     @apply bg-neon/5 border-neon/40;
@@ -144,3 +201,27 @@
     @apply min-h-[44px] min-w-[44px];
   }
 }
+
+/* In light mode the mobile menu uses the same dark-blue band as the top nav */
+[data-theme="light"] .mobile-nav-overlay { background-color: rgb(43 57 79 / 0.97); }
+
+/* Status colours are tuned for dark backgrounds; deepen them on light */
+[data-theme="light"] .text-red-300,
+[data-theme="light"] .text-red-400 { color: #c62828; }
+[data-theme="light"] .text-red-400\/80 { color: rgb(198 40 40 / 0.8); }
+[data-theme="light"] .text-green-400 { color: #1b7f4a; }
+[data-theme="light"] .text-yellow-400,
+[data-theme="light"] .text-yellow-500 { color: #a16207; }
+
+/* Light mode: panels (translucent-tint boxes, modals, glass) become solid white cards */
+[data-theme="light"] .glass,
+[data-theme="light"] .rounded-xl.bg-white\/\[0\.025\],
+[data-theme="light"] .rounded-xl.bg-white\/\[0\.03\],
+[data-theme="light"] .rounded-xl.bg-white\/\[0\.05\],
+[data-theme="light"] .rounded-xl.bg-ink-900,
+[data-theme="light"] .md\:rounded-xl.bg-ink-900 {
+  background-color: #ffffff;
+  border-color: rgb(43 57 79 / 0.08);
+  box-shadow: 0 1px 2px rgba(43,57,79,0.05), 0 4px 16px -4px rgba(43,57,79,0.10);
+}
+[data-theme="light"] .deal-card { background-color: #ffffff; box-shadow: var(--surface-shadow); }

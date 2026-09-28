@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 const COLORS = [
+  { value: "#2b394f", label: "Navy" },
   { value: "#deff00", label: "Neon Yellow" },
   { value: "#1D9E75", label: "Green" },
   { value: "#378ADD", label: "Blue" },

@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
+import { themeInitScript } from "@/components/ThemeToggle";
 
 const display = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -26,7 +27,10 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sv" className={`${display.variable} ${sans.variable}`}>
+    <html lang="sv" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="bg-ink-950 text-white antialiased min-h-screen bg-ink-glow">
         {children}
       </body>

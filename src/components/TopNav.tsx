@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import LogoutButton from "./LogoutButton";
 import MobileNav from "./MobileNav";
+import ThemeToggle from "./ThemeToggle";
 
 type Props = {
   currentTab: "pipeline" | "statistik" | "foretag" | "kontakter" | "projekt" | "mail-inbox";
@@ -16,7 +17,7 @@ export default function TopNav({ currentTab, isAdmin, pendingEmailCount = 0 }: P
 
   return (
     <>
-      <header className="px-4 md:px-8 py-5 flex items-center justify-between gap-4 md:gap-6 border-b border-white/[0.06]">
+      <header data-theme="dark" className="nav-band px-4 md:px-8 py-5 flex items-center justify-between gap-4 md:gap-6 border-b border-white/[0.06]">
         {/* Logo - kompaktare på mobil */}
         <div className="flex items-center gap-2 md:gap-3">
           <span className="y-brand w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-base md:text-lg lg:text-xl">
@@ -107,10 +108,13 @@ export default function TopNav({ currentTab, isAdmin, pendingEmailCount = 0 }: P
               Admin
             </Link>
           )}
+          <ThemeToggle />
           <LogoutButton />
         </nav>
 
         {/* Hamburger (endast mobil) */}
+        <div className="md:hidden flex items-center gap-1">
+        <ThemeToggle />
         <button
           onClick={() => setMobileMenuOpen(true)}
           className="md:hidden flex flex-col gap-1.5 w-8 h-8 items-center justify-center touch-target"
@@ -120,6 +124,7 @@ export default function TopNav({ currentTab, isAdmin, pendingEmailCount = 0 }: P
           <span className="hamburger-line" />
           <span className="hamburger-line" />
         </button>
+        </div>
       </header>
 
       {/* Mobile menu */}

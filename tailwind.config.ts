@@ -5,19 +5,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Theme-aware tokens: values live as RGB channels in globals.css
+        // (dark default + [data-theme="light"] override) so /opacity works.
+        white: "rgb(var(--c-white) / <alpha-value>)",
         // The Y Company brand
-        neon: "#deff00",
-        navy: "#2b394f",
+        neon: "rgb(var(--c-neon) / <alpha-value>)",
+        navy: "rgb(var(--c-navy) / <alpha-value>)",
         steel: "#94adba",
         beige: "#e9d7c4",
         offwhite: "#f5f4f4",
         // Dark theme — Y Analytics inspired
         ink: {
-          950: "#080f1a",
-          900: "#0c1622",
-          850: "#10192a",
-          800: "#172234",
-          700: "#1f2c3f",
+          950: "rgb(var(--c-ink-950) / <alpha-value>)",
+          900: "rgb(var(--c-ink-900) / <alpha-value>)",
+          850: "rgb(var(--c-ink-850) / <alpha-value>)",
+          800: "rgb(var(--c-ink-800) / <alpha-value>)",
+          700: "rgb(var(--c-ink-700) / <alpha-value>)",
         },
       },
       fontFamily: {
@@ -26,11 +29,10 @@ const config: Config = {
         sans: ['"DM Sans"', "system-ui", "-apple-system", "sans-serif"],
       },
       backgroundImage: {
-        "ink-glow":
-          "radial-gradient(ellipse 90% 50% at 50% -10%, rgba(222,255,0,0.06), transparent 60%), radial-gradient(ellipse 60% 40% at 100% 100%, rgba(43,57,79,0.4), transparent 60%)",
+        "ink-glow": "var(--ink-glow)",
       },
       boxShadow: {
-        "neon-glow": "0 0 24px -4px rgba(222, 255, 0, 0.35)",
+        "neon-glow": "var(--neon-glow)",
       },
     },
   },

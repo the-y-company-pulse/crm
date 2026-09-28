@@ -413,15 +413,15 @@ export default function ProjectTimeline({
 
 // A milestone marker: filled neon (done, with check), hollow (planned), red (overdue).
 function Diamond({ kind }: { kind: "done" | "planned" | "overdue" }) {
-  const fill = kind === "done" ? "#deff00" : kind === "overdue" ? "#ef4444" : "transparent"
-  const border = kind === "done" ? "#deff00" : kind === "overdue" ? "#ef4444" : "rgba(255,255,255,0.6)"
+  const fill = kind === "done" ? "rgb(var(--c-neon))" : kind === "overdue" ? "#ef4444" : "transparent"
+  const border = kind === "done" ? "rgb(var(--c-neon))" : kind === "overdue" ? "#ef4444" : "rgb(var(--c-white) / 0.6)"
   return (
     <span
       className="relative inline-flex items-center justify-center w-3.5 h-3.5 rotate-45 rounded-[2px]"
       style={{
         background: fill,
         border: `2px solid ${border}`,
-        boxShadow: kind === "done" ? "0 0 8px rgba(222,255,0,0.55)" : "none",
+        boxShadow: kind === "done" ? "0 0 8px rgb(var(--c-neon) / 0.55)" : "none",
       }}
     >
       {kind === "done" && (

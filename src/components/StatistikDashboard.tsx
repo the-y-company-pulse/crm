@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User, SalesSummary, WonDeal } from "@/lib/types";
 import TargetModal from "./TargetModal";
+import { ownerBg, ownerText } from "@/lib/ownerColor";
 
 type Props = {
   year: number;
@@ -153,7 +154,7 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
               className="h-full rounded-full transition-all"
               style={{
                 width: `${Math.min(pctOfTarget, 100)}%`,
-                background: pctOfTarget >= 100 ? "#4ade80" : "#deff00",
+                background: pctOfTarget >= 100 ? "#4ade80" : "rgb(var(--c-neon))",
               }}
             />
           </div>
@@ -174,7 +175,7 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-display text-base">Månadsöversikt</h3>
           <div className="flex gap-3 text-xs text-white/55">
-            <Legend swatch="#deff00" label={String(year)} />
+            <Legend swatch="rgb(var(--c-neon))" label={String(year)} />
             <Legend swatch="rgba(148,173,186,0.4)" label={String(year - 1)} />
             {summary.yearlyTarget > 0 && <Legend line label="Mål" color="#f87171" />}
           </div>
@@ -188,11 +189,11 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
             </>
           )}
           {/* Baseline + grid */}
-          <line x1="40" y1="200" x2="660" y2="200" stroke="rgba(255,255,255,0.1)" />
-          <line x1="40" y1="125" x2="660" y2="125" stroke="rgba(255,255,255,0.05)" />
-          <text x="36" y="203" fill="rgba(255,255,255,0.35)" fontSize="9" textAnchor="end">0</text>
-          <text x="36" y="128" fill="rgba(255,255,255,0.35)" fontSize="9" textAnchor="end">{fmtShort(chartMax / 2)}</text>
-          <text x="36" y="53" fill="rgba(255,255,255,0.35)" fontSize="9" textAnchor="end">{fmtShort(chartMax)}</text>
+          <line x1="40" y1="200" x2="660" y2="200" style={{ stroke: "rgb(var(--c-white) / 0.1)" }} />
+          <line x1="40" y1="125" x2="660" y2="125" style={{ stroke: "rgb(var(--c-white) / 0.05)" }} />
+          <text x="36" y="203" style={{ fill: "rgb(var(--c-white) / 0.35)" }} fontSize="9" textAnchor="end">0</text>
+          <text x="36" y="128" style={{ fill: "rgb(var(--c-white) / 0.35)" }} fontSize="9" textAnchor="end">{fmtShort(chartMax / 2)}</text>
+          <text x="36" y="53" style={{ fill: "rgb(var(--c-white) / 0.35)" }} fontSize="9" textAnchor="end">{fmtShort(chartMax)}</text>
           {/* Bars */}
           {Array.from({ length: 12 }, (_, i) => {
             const x = 56 + i * 50;
@@ -205,7 +206,7 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
             return (
               <g key={i}>
                 {selectedMonth === i && (
-                  <rect x={x - 5} y={50} width={46} height={150} fill="rgba(222,255,0,0.07)" rx="3" />
+                  <rect x={x - 5} y={50} width={46} height={150} style={{ fill: "rgb(var(--c-neon) / 0.07)" }} rx="3" />
                 )}
                 {prev > 0 && (
                   <rect x={x + 6} y={yScale(prev)} width="22" height={200 - yScale(prev)}
@@ -213,13 +214,13 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
                 )}
                 {!isFuture ? (
                   curr > 0 && <rect x={x} y={yScale(curr)} width="22" height={200 - yScale(curr)}
-                                    fill="#deff00" rx="2" />
+                                    style={{ fill: "rgb(var(--c-neon))" }} rx="2" />
                 ) : (
                   target > 0 && <rect x={x} y={yScale(target)} width="22" height={200 - yScale(target)}
-                                      fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)"
+                                      style={{ fill: "rgb(var(--c-white) / 0.04)", stroke: "rgb(var(--c-white) / 0.1)" }}
                                       strokeDasharray="2 2" rx="2" />
                 )}
-                <text x={x + 11} y="218" fill="rgba(255,255,255,0.45)" fontSize="9" textAnchor="middle">
+                <text x={x + 11} y="218" style={{ fill: "rgb(var(--c-white) / 0.45)" }} fontSize="9" textAnchor="middle">
                   {MONTH_LABELS[i]}
                 </text>
                 {hasDeals && (
@@ -268,12 +269,12 @@ export default function StatistikDashboard({ year, userId, users, summary, byUse
         <Card title="Per partner">
           {byUser.map(({ user, summary: us }) => {
             const pct = us.yearlyTarget > 0 ? Math.round((us.yearTotal / us.yearlyTarget) * 100) : 0;
-            const textColor = user.color === "#deff00" ? "#0a1420" : "white";
+            const textColor = ownerText(user.color);
             return (
               <Row key={user.id}>
                 <div className="flex items-center gap-2 min-w-[100px]">
                   <span className="owner-dot w-5 h-5"
-                        style={{ background: user.color, color: textColor }}>{user.initial}</span>
+                        style={{ background: ownerBg(user.color), color: textColor }}>{user.initial}</span>
                   <span className="text-white/70 text-sm">{user.name}</span>
                 </div>
                 <span className="text-xs text-white/50 w-10 text-right">{us.yearlyTarget > 0 ? `${pct}%` : "—"}</span>
@@ -358,7 +359,7 @@ function Row({ children, className = "" }: { children: React.ReactNode; classNam
 }
 
 function Bar({ pct, over, muted }: { pct: number; over?: boolean; muted?: boolean }) {
-  const color = muted ? "rgba(255,255,255,0.15)" : over ? "#4ade80" : "#deff00";
+  const color = muted ? "rgb(var(--c-white) / 0.15)" : over ? "#4ade80" : "rgb(var(--c-neon))";
   return (
     <div className="flex-1 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
@@ -411,7 +412,7 @@ function MonthDealsModal({ monthLabel, year, deals, onClose }: {
                     {d.owner && (
                       <span
                         className="owner-dot w-7 h-7 flex-shrink-0 text-xs"
-                        style={{ background: d.owner.color, color: d.owner.color === "#deff00" ? "#0a1420" : "white" }}
+                        style={{ background: ownerBg(d.owner.color), color: ownerText(d.owner.color) }}
                         title={d.owner.name}
                       >
                         {d.owner.initial}

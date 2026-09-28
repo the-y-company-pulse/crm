@@ -13,6 +13,7 @@ import EditSessionModal from "./EditSessionModal"
 import MilestoneModal, { type MilestoneInput } from "./MilestoneModal"
 import ProjectMilestoneStrip from "./ProjectMilestoneStrip"
 import type { Participant, ProjectSession, Milestone } from "@/lib/types"
+import { ownerBg } from "@/lib/ownerColor";
 
 export default function ProjectDetail({ project: initialProject }: { project: ProjectDetailType }) {
   const [project, setProject] = useState(initialProject)
@@ -733,7 +734,7 @@ export default function ProjectDetail({ project: initialProject }: { project: Pr
                   </span>
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                    style={{ background: deal.owner.color }}
+                    style={{ background: ownerBg(deal.owner.color) }}
                   >
                     {deal.owner.initial}
                   </div>

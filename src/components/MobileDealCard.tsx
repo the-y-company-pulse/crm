@@ -2,6 +2,7 @@
 
 import type { Deal, Stage } from "@/lib/types";
 import ReminderBadge from "./ReminderBadge";
+import { ownerBg, ownerText } from "@/lib/ownerColor";
 
 type Props = {
   deal: Deal;
@@ -26,11 +27,11 @@ export default function MobileDealCard({ deal, onOpen, onMove, stages, isSearchH
   return (
     <div
       className={[
-        "bg-navy/80 border border-white/[0.15] rounded-lg p-4 transition-all hover:bg-navy",
+        "deal-card bg-navy/80 border border-white/[0.15] rounded-lg p-4 transition-all hover:bg-navy",
         isSearchHit ? "is-search-hit" : "",
         isSearchDim ? "is-search-dim" : "",
       ].join(" ")}
-      style={{ borderLeftColor: deal.owner?.color || '#888', borderLeftWidth: '4px' }}
+      style={{ borderLeftColor: ownerBg(deal.owner?.color), borderLeftWidth: '4px' }}
     >
       {/* Card content - klickbar för att öppna */}
       <div onClick={onOpen} className="cursor-pointer touch-target">
@@ -50,8 +51,8 @@ export default function MobileDealCard({ deal, onOpen, onMove, stages, isSearchH
             <span
               className="owner-dot w-7 h-7 text-xs"
               style={{
-                background: deal.owner.color,
-                color: deal.owner.color === "#deff00" ? "#0a1420" : "white"
+                background: ownerBg(deal.owner.color),
+                color: ownerText(deal.owner.color)
               }}
             >
               {deal.owner.initial}

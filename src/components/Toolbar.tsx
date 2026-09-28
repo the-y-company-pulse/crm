@@ -2,6 +2,7 @@
 
 import type { User } from "@/lib/types";
 import { useIsMobile } from "@/hooks/useMediaQuery";
+import { ownerBg } from "@/lib/ownerColor";
 
 type Props = {
   users: User[];
@@ -100,7 +101,7 @@ export default function Toolbar({
                       active ? "bg-white/[0.10] text-white" : "text-white/50 hover:text-white/80"
                     }`}
                   >
-                    <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full" style={{ background: u.color }} />
+                    <span className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full" style={{ background: ownerBg(u.color) }} />
                     <span className="hidden sm:inline">{u.name}</span>
                   </button>
                 );

@@ -90,8 +90,8 @@ export default function ProjectMilestoneStrip({
           const mt = startOfDay(new Date(m.date).getTime())
           const left = pct(new Date(m.date).getTime())
           const overdue = m.status !== "done" && mt < today
-          const color = m.status === "done" ? "#deff00" : overdue ? "#ef4444" : "transparent"
-          const border = m.status === "done" ? "#deff00" : overdue ? "#ef4444" : "rgba(255,255,255,0.55)"
+          const color = m.status === "done" ? "rgb(var(--c-neon))" : overdue ? "#ef4444" : "transparent"
+          const border = m.status === "done" ? "rgb(var(--c-neon))" : overdue ? "#ef4444" : "rgb(var(--c-white) / 0.55)"
           // Alternate labels above/below to reduce collisions.
           const above = i % 2 === 0
           return (
@@ -101,7 +101,7 @@ export default function ProjectMilestoneStrip({
                 style={{
                   background: color,
                   border: `2px solid ${border}`,
-                  boxShadow: m.status === "done" ? "0 0 8px rgba(222,255,0,0.6)" : "none",
+                  boxShadow: m.status === "done" ? "0 0 8px rgb(var(--c-neon) / 0.6)" : "none",
                 }}
                 title={`${m.title} · ${new Date(m.date).getDate()} ${MONTHS[new Date(m.date).getMonth()]}`}
               />

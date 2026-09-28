@@ -4,6 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { Deal } from "@/lib/types";
 import ReminderBadge from "./ReminderBadge";
+import { ownerBg, ownerText } from "@/lib/ownerColor";
 
 type Props = {
   deal: Deal;
@@ -20,9 +21,9 @@ export default function DealCard({ deal, isSelected, isOverlay, onClick, isSearc
     disabled: isOverlay,
   });
 
-  const ownerColor = deal.owner?.color ?? "#888";
+  const ownerColor = ownerBg(deal.owner?.color);
   const ownerInitial = deal.owner?.initial ?? "?";
-  const ownerTextColor = deal.owner?.color === "#deff00" ? "#0a1420" : "white";
+  const ownerTextColor = ownerText(deal.owner?.color);
   const fmt = (v: number) => v.toLocaleString("sv-SE") + " SEK";
   const activityCount = deal.activities?.length ?? 0;
 

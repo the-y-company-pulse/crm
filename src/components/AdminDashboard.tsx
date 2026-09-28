@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import AddUserModal from "./AddUserModal"
+import { ownerBg, ownerText } from "@/lib/ownerColor";
 
 type User = {
   id: string
@@ -87,7 +88,7 @@ export default function AdminDashboard({
                   <div className="flex items-center gap-3">
                     <span
                       className="owner-dot w-8 h-8 text-xs"
-                      style={{ background: user.color, color: user.color === "#deff00" ? "#0a1420" : "white" }}
+                      style={{ background: ownerBg(user.color), color: ownerText(user.color) }}
                     >
                       {user.initial}
                     </span>

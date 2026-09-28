@@ -13,7 +13,7 @@ export default function MobileNav({ currentTab, isAdmin, onClose, pendingEmailCo
   const isActive = (tab: string) => currentTab === tab;
 
   return (
-    <div className="mobile-nav-overlay" onClick={onClose}>
+    <div data-theme="dark" className="mobile-nav-overlay" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}

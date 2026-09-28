@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import NewContactModal from "./NewContactModal"
+import { ownerBg, ownerText } from "@/lib/ownerColor";
 
 type Company = {
   id: string
@@ -294,9 +295,9 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
         ) : (
           <div className="space-y-2">
             {company.deals.map((deal) => {
-              const ownerColor = deal.owner.color
+              const ownerColor = ownerBg(deal.owner.color)
               const ownerInitial = deal.owner.initial
-              const ownerTextColor = ownerColor === "#deff00" ? "#0a1420" : "white"
+              const ownerTextColor = ownerText(ownerColor)
 
               return (
                 <div

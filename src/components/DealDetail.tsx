@@ -6,6 +6,7 @@ import type { Deal, User, Activity } from "@/lib/types";
 import { ACTIVITY_LABELS, ACTIVITY_COLORS, PROJECT_STATUS_LABELS, reminderStatus, formatReminderDate, reminderDateInputValue } from "@/lib/types";
 import EditDealModal from "./EditDealModal";
 import ReminderBadge from "./ReminderBadge";
+import { ownerBg, ownerText } from "@/lib/ownerColor";
 
 type Props = {
   deal: Deal;
@@ -32,9 +33,9 @@ export default function DealDetail({ deal, users, currentUserId, onClose, onAddA
   const [savingReminder, setSavingReminder] = useState(false);
 
   const fmt = (v: number) => v.toLocaleString("sv-SE") + " SEK";
-  const ownerColor = deal.owner?.color ?? "#888";
+  const ownerColor = ownerBg(deal.owner?.color);
   const ownerInitial = deal.owner?.initial ?? "?";
-  const ownerTextColor = ownerColor === "#deff00" ? "#0a1420" : "white";
+  const ownerTextColor = ownerText(ownerColor);
 
   async function submit() {
     if (!content.trim() || submitting) return;
