@@ -17,6 +17,9 @@ const sans = DM_Sans({
 export const metadata: Metadata = {
   title: "The Y CRM",
   description: "The Y Company — affärspipeline",
+  appleWebApp: {
+    title: "The Y CRM",
+  },
 };
 
 export const viewport = {
