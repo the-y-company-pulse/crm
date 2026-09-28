@@ -13,9 +13,11 @@ type Props = {
   onClick?: () => void;
   isSearchHit?: boolean;
   isSearchDim?: boolean;
+  /** Terminal outcome from the stage the card sits in; falls back to deal.status */
+  outcome?: "won" | "lost" | null;
 };
 
-export default function DealCard({ deal, isSelected, isOverlay, onClick, isSearchHit, isSearchDim }: Props) {
+export default function DealCard({ deal, isSelected, isOverlay, onClick, isSearchHit, isSearchDim, outcome }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: deal.id,
     disabled: isOverlay,
@@ -31,6 +33,8 @@ export default function DealCard({ deal, isSelected, isOverlay, onClick, isSearc
   const companyName = (deal as any).company_rel?.name || deal.company;
   const contactName = (deal as any).contact_rel?.fullName || deal.contact;
 
+  const result = outcome !== undefined ? outcome : deal.status === "won" || deal.status === "lost" ? deal.status : null;
+
   const style = {
     transform: CSS.Translate.toString(transform),
     borderLeftColor: ownerColor,
@@ -45,6 +49,7 @@ export default function DealCard({ deal, isSelected, isOverlay, onClick, isSearc
       onClick={() => { if (!isDragging) onClick?.(); }}
       className={[
         "y-card p-4",
+        result === "won" ? "is-won" : result === "lost" ? "is-lost" : "",
         isDragging ? "is-dragging" : "",
         isSelected ? "is-selected" : "",
         isOverlay ? "shadow-2xl rotate-1" : "",

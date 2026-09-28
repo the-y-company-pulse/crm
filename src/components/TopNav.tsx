@@ -19,7 +19,7 @@ export default function TopNav({ currentTab, isAdmin, pendingEmailCount = 0 }: P
     <>
       <header data-theme="dark" className="nav-band px-4 md:px-8 py-5 flex items-center justify-between gap-4 md:gap-6 border-b border-white/[0.06]">
         {/* Logo - kompaktare på mobil */}
-        <div className="flex items-center gap-2 md:gap-3">
+        <Link href="/" className="flex items-center gap-2 md:gap-3" aria-label="Till pipeline">
           <span className="y-brand w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-base md:text-lg lg:text-xl">
             Y
           </span>
@@ -31,7 +31,7 @@ export default function TopNav({ currentTab, isAdmin, pendingEmailCount = 0 }: P
               CRM
             </span>
           </h1>
-        </div>
+        </Link>
 
         {/* Desktop nav - dölj på mobil */}
         <nav className="hidden md:flex gap-2 p-1.5 bg-white/[0.03] border border-white/[0.08] rounded-lg">

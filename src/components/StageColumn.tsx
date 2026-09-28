@@ -33,6 +33,7 @@ export default function StageColumn({
   // Highlight terminal stages
   const isTerminal = stage.status === "won" || stage.status === "lost";
   const isWon = stage.status === "won";
+  const isLost = stage.status === "lost";
 
   // Decide sort + limit based on stage type
   const limit = COLLAPSE_LIMIT;
@@ -55,34 +56,28 @@ export default function StageColumn({
     <div
       ref={setNodeRef}
       className={`y-col flex-1 min-w-[280px] max-w-[350px] ${isOver ? "is-over" : ""} ${
-        isWon ? "relative" : ""
+        isWon ? "relative y-col-won" : isLost ? "y-col-lost" : ""
       }`}
-      style={isWon ? {
-        background: "linear-gradient(135deg, rgb(var(--c-neon) / 0.08) 0%, rgb(var(--c-neon) / 0.02) 100%)",
-        border: "1px solid rgb(var(--c-neon) / 0.2)",
-        borderRadius: "12px",
-        padding: "8px",
-      } : undefined}
     >
       <div className="px-2 pb-4 flex items-center justify-between">
         <div>
-          <div className={`text-base font-semibold ${isWon ? "text-neon" : isTerminal ? "text-white/70" : "text-white"}`}>
+          <div className={`text-base font-semibold ${isWon ? "text-won" : isLost ? "text-lost" : "text-white"}`}>
             {stage.name}
           </div>
-          <div className={`text-sm mt-1 ${isWon ? "text-neon/60" : "text-white/40"}`}>
+          <div className={`text-sm mt-1 ${isWon ? "text-won/70" : isLost ? "text-lost/70" : "text-white/40"}`}>
             {deals.length} aff · {fmt(total)}
           </div>
         </div>
         {isWon && (
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-neon" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-won" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
           </div>
         )}
         {isTerminal && !isWon && (
           <span
-            className="w-2 h-2 rounded-full bg-red-400/80"
+            className="w-2 h-2 rounded-full bg-lost"
           />
         )}
       </div>
@@ -103,6 +98,7 @@ export default function StageColumn({
                   onClick={() => onCardClick(deal.id)}
                   isSearchHit={isHit}
                   isSearchDim={isMiss}
+                  outcome={isWon ? "won" : isLost ? "lost" : null}
                 />
               );
             })}

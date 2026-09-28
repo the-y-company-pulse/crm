@@ -15,6 +15,7 @@ type Props = {
 
 export default function MobileDealCard({ deal, onOpen, onMove, stages, isSearchHit, isSearchDim }: Props) {
   const currentStageIndex = stages.findIndex(s => s.id === deal.stageId);
+  const result = stages[currentStageIndex]?.status ?? deal.status;
   const prevStage = stages[currentStageIndex - 1];
   const nextStage = stages[currentStageIndex + 1];
 
@@ -28,6 +29,7 @@ export default function MobileDealCard({ deal, onOpen, onMove, stages, isSearchH
     <div
       className={[
         "deal-card bg-navy/80 border border-white/[0.15] rounded-lg p-4 transition-all hover:bg-navy",
+        result === "won" ? "is-won" : result === "lost" ? "is-lost" : "",
         isSearchHit ? "is-search-hit" : "",
         isSearchDim ? "is-search-dim" : "",
       ].join(" ")}

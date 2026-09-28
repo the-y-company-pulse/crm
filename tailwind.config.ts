@@ -11,6 +11,8 @@ const config: Config = {
         // The Y Company brand
         neon: "rgb(var(--c-neon) / <alpha-value>)",
         navy: "rgb(var(--c-navy) / <alpha-value>)",
+        won: "rgb(var(--c-won) / <alpha-value>)",
+        lost: "rgb(var(--c-lost) / <alpha-value>)",
         steel: "#94adba",
         beige: "#e9d7c4",
         offwhite: "#f5f4f4",

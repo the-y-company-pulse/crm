@@ -338,7 +338,16 @@ export default function Kanban({ initialDeals, stages, users, currentUserId }: P
         </div>
 
         <DragOverlay>
-          {activeDeal ? <DealCard deal={activeDeal} isOverlay /> : null}
+          {activeDeal ? (
+            <DealCard
+              deal={activeDeal}
+              isOverlay
+              outcome={(() => {
+                const st = stages.find((s) => s.id === activeDeal.stageId)?.status;
+                return st === "won" || st === "lost" ? st : null;
+              })()}
+            />
+          ) : null}
         </DragOverlay>
       </DndContext>
 

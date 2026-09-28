@@ -25,6 +25,8 @@
   --card-hover-from: #34445f;
   --card-hover-to: #283549;
   --surface-shadow: none;
+  --c-won: 74 222 128;               /* green-400 */
+  --c-lost: 248 113 113;             /* red-400 */
   --c-owner-navy: 148 173 186;       /* brand navy partner colour → steel on dark */
   --c-owner-navy-text: 10 20 32;
   color-scheme: dark;
@@ -46,6 +48,8 @@
   --card-hover-from: #ffffff;
   --card-hover-to: #f4f6f9;
   --surface-shadow: 0 1px 2px rgba(43,57,79,0.06), 0 2px 8px -2px rgba(43,57,79,0.08);
+  --c-won: 22 128 61;                /* green-700 */
+  --c-lost: 200 40 40;
   --c-owner-navy: 43 57 79;
   --c-owner-navy-text: 255 255 255;
   color-scheme: light;
@@ -103,6 +107,28 @@
     @apply border-white/[0.30];
   }
   .y-card.is-dragging { @apply opacity-40; }
+
+  /* Won / lost deals: tinted card in the outcome colour (owner stripe kept) */
+  .y-card.is-won, .deal-card.is-won {
+    background: linear-gradient(135deg, rgb(var(--c-won) / 0.16) 0%, rgb(var(--c-won) / 0.07) 100%), var(--card-to);
+    border-color: rgb(var(--c-won) / 0.45);
+  }
+  .y-card.is-lost, .deal-card.is-lost {
+    background: linear-gradient(135deg, rgb(var(--c-lost) / 0.16) 0%, rgb(var(--c-lost) / 0.07) 100%), var(--card-to);
+    border-color: rgb(var(--c-lost) / 0.45);
+  }
+  .y-card.is-won:hover, .deal-card.is-won:hover { border-color: rgb(var(--c-won) / 0.7); }
+  .y-card.is-lost:hover, .deal-card.is-lost:hover { border-color: rgb(var(--c-lost) / 0.7); }
+
+  /* Terminal columns */
+  .y-col.y-col-won {
+    background: linear-gradient(135deg, rgb(var(--c-won) / 0.08) 0%, rgb(var(--c-won) / 0.02) 100%);
+    border-color: rgb(var(--c-won) / 0.25);
+  }
+  .y-col.y-col-lost {
+    background: linear-gradient(135deg, rgb(var(--c-lost) / 0.08) 0%, rgb(var(--c-lost) / 0.02) 100%);
+    border-color: rgb(var(--c-lost) / 0.25);
+  }
   .y-card.is-selected { box-shadow: 0 0 0 2px rgb(var(--c-neon)); }
 
   .is-search-hit {
