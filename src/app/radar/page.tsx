@@ -1,5 +1,6 @@
 import { auth } from "../../../auth"
 import { redirect } from "next/navigation"
+import { after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { processRadarInbox, syncRepeatBuyerSignals } from "@/lib/radar"
 import { isRadarKey } from "@/lib/radar-constants"
@@ -19,9 +20,12 @@ export default async function RadarPage({
   const { radar: radarParam } = await searchParams
   const radar = isRadarKey(radarParam) ? radarParam : "kultur"
 
-  // Pick up anything the harvests have written since last visit
-  await processRadarInbox()
-  await syncRepeatBuyerSignals()
+  // Pick up anything the harvests have written since last visit (one cheap
+  // count when there's nothing new). Repeat-buyer signals are refreshed after
+  // the response is sent, so they never slow the page down.
+  const pending = await prisma.radarInbox.count({ where: { processedAt: null, processError: null } })
+  if (pending > 0) await processRadarInbox()
+  after(() => syncRepeatBuyerSignals())
 
   const [signals, users, failed, nextProgram] = await Promise.all([
     prisma.signal.findMany({

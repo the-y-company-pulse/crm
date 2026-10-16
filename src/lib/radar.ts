@@ -432,12 +432,21 @@ export async function syncRepeatBuyerSignals() {
     }
   }
 
-  // Drop untouched signals for companies no longer eligible (booked into the next intake, or ourselves)
-  const stale = await prisma.signal.findMany({
-    where: { radar: "ledarskap", type: REPEAT_BUYER_TYPE, statusChangedAt: null, companyId: { notIn: [...byCompany.keys()] } },
-    select: { id: true },
+  // All existing repeat-buyer signals in one query, grouped per company
+  const allExisting = await prisma.signal.findMany({
+    where: { radar: "ledarskap", type: REPEAT_BUYER_TYPE },
+    orderBy: [{ statusChangedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
   })
-  if (stale.length) await prisma.signal.deleteMany({ where: { id: { in: stale.map((x) => x.id) } } })
+  const existingByCompany = new Map<string, typeof allExisting>()
+  for (const sig of allExisting) existingByCompany.set(sig.companyId, [...(existingByCompany.get(sig.companyId) ?? []), sig])
+
+  // Untouched signals to remove: companies no longer eligible (booked into the
+  // next intake, or ourselves) and duplicates from when there was one per intake
+  const toDelete = allExisting
+    .filter((sig) => sig.statusChangedAt == null)
+    .filter((sig) => !byCompany.has(sig.companyId) || existingByCompany.get(sig.companyId)![0].id !== sig.id)
+    .map((sig) => sig.id)
+  if (toDelete.length) await prisma.signal.deleteMany({ where: { id: { in: toDelete } } })
 
   let changed = 0
   for (const [companyId, intakes] of byCompany) {
@@ -459,15 +468,8 @@ export async function syncRepeatBuyerSignals() {
         : "Följ upp hur det gick för deltagarna och fråga vilka som står på tur.",
     }
 
-    // One signal per company. Keep the one a human has triaged, else the newest;
-    // remove untouched duplicates (from when there was one per intake).
-    const existing = await prisma.signal.findMany({
-      where: { companyId, radar: "ledarskap", type: REPEAT_BUYER_TYPE },
-      orderBy: [{ statusChangedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
-    })
-    const [keep, ...rest] = existing
-    const dupes = rest.filter((d) => d.statusChangedAt == null)
-    if (dupes.length) await prisma.signal.deleteMany({ where: { id: { in: dupes.map((d) => d.id) } } })
+    // One signal per company: the one a human has triaged, else the newest
+    const keep = existingByCompany.get(companyId)?.[0]
 
     if (!keep) {
       await prisma.signal.create({
