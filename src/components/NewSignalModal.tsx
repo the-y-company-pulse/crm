@@ -19,6 +19,7 @@ const HEADER_ALIASES: Record<string, string> = {
   orgnr: "orgnr", organisationsnummer: "orgnr",
   ort: "ort", stad: "ort",
   bransch: "bransch",
+  webbplats: "webbplats", hemsida: "webbplats", webb: "webbplats", website: "webbplats",
   region: "region", lan: "region",
   anstallda: "anstallda",
   datum: "datum",
@@ -232,6 +233,7 @@ export default function NewSignalModal({ radar, onClose, onCreated }: Props) {
                   </select>
                 </Field>
                 <Field label="Bransch"><input className="input" value={form.bransch ?? ""} onChange={set("bransch")} /></Field>
+                <Field label="Webbplats"><input className="input" value={form.webbplats ?? ""} onChange={set("webbplats")} placeholder="www.bolag.se" /></Field>
                 <Field label="Anställda"><input className="input" value={form.anstallda ?? ""} onChange={set("anstallda")} placeholder="t.ex. 120" /></Field>
               </div>
 
@@ -278,7 +280,7 @@ export default function NewSignalModal({ radar, onClose, onCreated }: Props) {
             <div className="flex flex-col gap-3">
               <p className="text-sm text-white/60">
                 Klistra in från Excel eller Google Sheets med rubrikrad. Kolumner som känns igen:
-                <span className="text-white/80"> Bolag, Typ, Signal, Org.nr, Ort, Region, Bransch, Anställda, Datum, Källa, Länk, Styrka, Vinkel, Kontakt, Roll, Telefon, Växel, E-post</span>
+                <span className="text-white/80"> Bolag, Typ, Signal, Org.nr, Ort, Region, Bransch, Webbplats, Anställda, Datum, Källa, Länk, Styrka, Vinkel, Kontakt, Roll, Telefon, Växel, E-post</span>
                 {isLeadership && <span className="text-white/80">, Bokslutsår, Omsättning, Rörelseresultat, Resultat fg, Marginal, Soliditet, Kassalikviditet, Chefer</span>}.
                 Bolag och Signal krävs.
               </p>

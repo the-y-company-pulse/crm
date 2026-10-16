@@ -67,6 +67,7 @@ Ange i `signal` vem personen är och vad relationen var, t.ex. "Anna Andersson (
 | `slug` | text | | Bolagsnamnet som slug, t.ex. `xl-bygg-herrljunga` |
 | `orgnr` | text | | Organisationsnummer `XXXXXX-XXXX`. **Viktigaste fältet för dubblettskydd.** Ange det när det går att hitta i bolagets egna publiceringar eller i årsredovisningen |
 | `ort`, `bransch` | text | | |
+| `webbplats` | text | | Bolagets **egen** webbplats, t.ex. `https://www.bolag.se`. Aldrig en nyhets-, press- eller registersida. Ange den alltid när den är känd, så att man kan läsa på inför kontakt |
 | `region` | text | | `Västra Götaland` / `Halland` / `Jönköpings län` / `Övriga Sverige` / `Okänd`. Bohuslän räknas som `Västra Götaland` |
 | `anstallda` | text | | Siffra som text eller `okänt` |
 | `datum` | text | | `ÅÅÅÅ-MM` för händelsen |

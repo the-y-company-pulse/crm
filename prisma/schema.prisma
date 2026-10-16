@@ -425,6 +425,7 @@ model RadarInbox {
   orgnr                 String?
   ort                   String?
   bransch               String?
+  webbplats             String? // The company's own website, e.g. https://www.bolag.se
   region                String?
   anstallda             String?
   signal                String  @db.Text

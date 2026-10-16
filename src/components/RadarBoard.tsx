@@ -50,6 +50,7 @@ export type RadarSignal = {
     name: string
     orgNr: string | null
     industry: string | null
+    website: string | null
     city: string | null
     region: string | null
     employees: number | null
@@ -116,6 +117,30 @@ function isGapTopProspect(s: RadarSignal) {
 // Repeat buyers are judged on the relationship, not the company profile
 function showsFit(s: RadarSignal) {
   return s.type !== REPEAT_BUYER_TYPE
+}
+
+function hostOfSite(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "")
+  } catch {
+    return url
+  }
+}
+
+function WebsiteLink({ url }: { url: string | null }) {
+  if (!url) return null
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="text-xs text-neon/80 hover:text-neon hover:underline"
+      title="Öppna bolagets webbplats"
+    >
+      {hostOfSite(url)} ↗
+    </a>
+  )
 }
 
 function pastParticipants(s: RadarSignal) {
@@ -482,6 +507,7 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
                       <div className="text-xs text-white/40 truncate">
                         {[s.company.city, s.company.industry].filter(Boolean).join(" · ")}
                       </div>
+                      <WebsiteLink url={s.company.website} />
                     </div>
                     {!hasFit && <StrengthLabel strength={s.strength} />}
                   </div>
@@ -595,6 +621,7 @@ function RadarRow({
           <div className="text-xs text-white/40 mt-0.5">
             {[s.company.city, s.company.industry].filter(Boolean).join(" · ")}
           </div>
+          <WebsiteLink url={s.company.website} />
         </td>
         <td className="px-5 py-4">
           <div className="text-xs text-white/50 mb-1">
@@ -640,6 +667,7 @@ function SignalDetails({ s, fit }: { s: RadarSignal; fit?: FitCriterion[] }) {
           <Detail label="Omsättning" value={`${c2.revenueMsek.toLocaleString("sv-SE")} MSEK${c2.fiscalYear ? ` (${c2.fiscalYear})` : ""}`} />
         )}
         {participants > 0 && <Detail label="Tidigare" value={`${participants} deltagare i tidigare program`} />}
+        <Detail label="Webbplats" value={c2.website ? hostOfSite(c2.website) : "Saknas"} href={c2.website ?? undefined} />
         {s.angle && <Detail label="Vinkel" value={s.angle} />}
         <Detail
           label="Källa"

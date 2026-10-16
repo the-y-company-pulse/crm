@@ -18,6 +18,7 @@ const InboxRowSchema = z.object({
   orgnr: opt,
   ort: opt,
   bransch: opt,
+  webbplats: opt,
   region: opt,
   anstallda: opt,
   datum: opt,

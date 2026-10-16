@@ -84,6 +84,42 @@ function isPersonalEmail(email: string, contactName: string | null) {
     .some((p) => fold(local).includes(p))
 }
 
+// "www.bolag.se/kontakt" → "https://www.bolag.se"
+export function normalizeWebsite(raw: string | null | undefined) {
+  const v = clean(raw)
+  if (!v) return null
+  try {
+    const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`)
+    return u.hostname.includes(".") ? `https://${u.hostname.toLowerCase()}` : null
+  } catch {
+    return null
+  }
+}
+
+// Hosts that publish about companies but are never a company's own site
+const NOT_COMPANY_SITES = /(^|\.)(mynewsdesk|cision|mfn|notified|allabolag|ratsit|hitta|eniro|merinfo|proff|linkedin|facebook|teamtailor|inderes|tt|via\.tt|borskollen|realtid|di|gp|bt|ttela|bohuslaningen|alingsastidning|vdtidningen|dagensmedarbetare|entreprenad|branschaktuellt|processnet|nordicconstruction|itbranschen|securityworldmarket|signprint|bilweb|ehandel|horisontmagasin|lokaltidningenvaxjo|passioneffect|litorina|newsworthy|markposten)\.(se|com|nu|net)$/
+
+const fold = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "")
+const NAME_STOPWORDS = new Set(["ab", "och", "the", "group", "gruppen", "sverige", "sweden", "i", "av"])
+
+// The company's own site from source URLs: the first host whose domain
+// resembles the company name (e.g. aromafrukt.se for "Aroma Frukt & Grönt")
+export function guessWebsite(urls: (string | null | undefined)[], companyName: string) {
+  const tokens = companyName
+    .split(/[\s()&/+,.-]+/)
+    .map(fold)
+    .filter((t) => t.length >= 3 && !NAME_STOPWORDS.has(t))
+  for (const raw of urls) {
+    const site = normalizeWebsite(raw)
+    if (!site) continue
+    const host = new URL(site).hostname.replace(/^www\./, "")
+    if (NOT_COMPANY_SITES.test(host) || host.split(".").length > 2) continue
+    const label = fold(host.split(".")[0])
+    if (tokens.some((t) => label.includes(t) || t.includes(label))) return site
+  }
+  return null
+}
+
 // "Simon Röcklinger (ej bekräftad)" → { name: "Simon Röcklinger", note: "ej bekräftad" }
 function parseContactName(raw: string | null | undefined) {
   const v = clean(raw)
@@ -156,6 +192,7 @@ async function upsertCompany(tx: Tx, row: RadarInbox) {
     switchboard: clean(row.vaxel),
     email: generalEmail,
     emailPattern: clean(row.epostMonster),
+    website: normalizeWebsite(row.webbplats) ?? guessWebsite([row.kontaktKalla, row.url], row.bolag),
   }
 
   const financials = financialFields(row)
