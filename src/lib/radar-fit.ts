@@ -4,13 +4,13 @@
 import { companyDistanceKm } from "./geo"
 
 export const FIT_RULES = {
-  minMarginPct: 5,
+  minMarginPct: 5, // average over the two latest years
   minQuickRatioPct: 100,
   minEquityRatioPct: 30,
-  minManagers: 10,
+  minManagers: 7,
   maxManagers: 30,
   employeesPerManager: 9, // estimate when the number of managers isn't published
-  minEmployees: 80, // employee range used when the manager count is unknown
+  minEmployees: 60, // employee range used when the manager count is unknown
   maxEmployees: 300,
   defaultRadiusKm: 100,
 }
@@ -41,6 +41,15 @@ export function marginPct(c: FitCompany) {
   return null
 }
 
+// Average operating margin over the two latest years. Previous year's revenue
+// isn't stored, so its margin is approximated against the latest revenue.
+export function averageMarginPct(c: FitCompany) {
+  const latest = marginPct(c)
+  if (latest == null) return null
+  if (c.operatingProfitPrevMsek == null || !c.revenueMsek) return latest
+  return (latest + (c.operatingProfitPrevMsek / c.revenueMsek) * 100) / 2
+}
+
 export function estimatedManagers(c: FitCompany): { value: number; estimated: boolean } | null {
   if (c.managers != null) return { value: c.managers, estimated: false }
   if (c.employees != null) return { value: Math.round(c.employees / FIT_RULES.employeesPerManager), estimated: true }
@@ -50,19 +59,23 @@ export function estimatedManagers(c: FitCompany): { value: number; estimated: bo
 export function evaluateFit(c: FitCompany, radiusKm = FIT_RULES.defaultRadiusKm): FitCriterion[] {
   const r = FIT_RULES
   const margin = marginPct(c)
+  const avgMargin = averageMarginPct(c)
   const year = c.fiscalYear ? ` (${c.fiscalYear})` : ""
 
-  // Lönsam: positive operating result both years and a healthy margin
+  // Lönsam: positive operating result both years and a healthy average margin,
+  // so one weak year doesn't rule out an otherwise sound company
   let profitable: FitState = "unknown"
   if (
     (c.operatingProfitMsek != null && c.operatingProfitMsek <= 0) ||
     (c.operatingProfitPrevMsek != null && c.operatingProfitPrevMsek <= 0) ||
-    (margin != null && margin < r.minMarginPct)
+    (avgMargin != null && avgMargin < r.minMarginPct)
   ) profitable = "no"
-  else if (c.operatingProfitMsek != null && c.operatingProfitPrevMsek != null && margin != null) profitable = "ok"
-  const profitDetail = margin != null
-    ? `Rörelsemarginal ${fmt(margin, 1)} %${year}` + (c.operatingProfitPrevMsek == null ? ", föregående år saknas" : "")
-    : "Resultat saknas"
+  else if (c.operatingProfitMsek != null && c.operatingProfitPrevMsek != null && avgMargin != null) profitable = "ok"
+  const profitDetail = margin == null
+    ? "Resultat saknas"
+    : c.operatingProfitPrevMsek == null
+      ? `Rörelsemarginal ${fmt(margin, 1)} %${year}, föregående år saknas`
+      : `Rörelsemarginal ${fmt(margin, 1)} %${year}, snitt två år ca ${fmt(avgMargin!, 1)} %`
 
   // Kassaflöde (proxy): quick ratio and equity ratio
   let cash: FitState = "unknown"
@@ -76,10 +89,10 @@ export function evaluateFit(c: FitCompany, radiusKm = FIT_RULES.defaultRadiusKm)
     c.equityRatioPct != null ? `soliditet ${fmt(c.equityRatioPct)} %` : "soliditet saknas",
   ].join(", ")
 
-  // 10–30 leaders
+  // 7–30 leaders
   const m = estimatedManagers(c)
   // Published manager count is judged directly; otherwise the employee range
-  // that corresponds to 10–30 leaders (so the estimate's rounding doesn't decide)
+  // that corresponds to 7–30 leaders (so the estimate's rounding doesn't decide)
   const leaders: FitState = !m
     ? "unknown"
     : !m.estimated
@@ -106,7 +119,7 @@ export function evaluateFit(c: FitCompany, radiusKm = FIT_RULES.defaultRadiusKm)
   return [
     { key: "profit", label: "Lönsamt", state: profitable, detail: profitDetail },
     { key: "cash", label: "Kassaflöde", state: cash, detail: cashDetail },
-    { key: "leaders", label: "10–30 ledare", state: leaders, detail: leaderDetail },
+    { key: "leaders", label: `${r.minManagers}–${r.maxManagers} ledare`, state: leaders, detail: leaderDetail },
     { key: "near", label: `Inom ${radiusKm / 10} mil`, state: near, detail: nearDetail },
   ]
 }

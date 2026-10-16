@@ -6,9 +6,9 @@ Underlag för en schemalagd uppgift i claude.ai som hittar bolag som passar **Th
 
 | Kriterium | Gräns | Hur CRM:et bedömer |
 |---|---|---|
-| **Lönsamt** | Positivt rörelseresultat de två senaste åren och rörelsemarginal på minst 5 % | `rorelseresultat_msek`, `rorelseresultat_fg_msek`, `rorelsemarginal` (räknas ut från omsättningen om den saknas) |
+| **Lönsamt** | Positivt rörelseresultat båda de två senaste åren och rörelsemarginal på minst 5 % i **snitt** för de två åren. Ett enstaka svagare år är okej | `rorelseresultat_msek`, `rorelseresultat_fg_msek`, `omsattning_msek` |
 | **Bra kassaflöde** | Kassalikviditet på minst 100 % och soliditet på minst 30 % | `kassalikviditet`, `soliditet` |
-| **10–30 ledare** | Publicerat antal chefer, annars ca 80–300 anställda (ca 1 chef per 9 anställda) | `antal_chefer` eller `anstallda` |
+| **7–30 ledare** | Publicerat antal chefer, annars 60–300 anställda. Bolag med 60–80 anställda har ofta en ledningsgrupp plus teamledare och är för små för ett eget internt program, så de passar bra. Över 300 anställda passar bättre för ett skräddarsytt program | `antal_chefer` eller `anstallda` |
 | **Nära Göteborg** | Högst 10 mil fågelvägen | Räknas ut från `ort`. Ange en ort som tätort eller kommun, t.ex. `Alingsås`, inte `Västsverige` |
 
 Uteslut bolag som ingår i en stor koncern med egna interna ledarprogram, och bolag med utländsk ledning. Gränsfall tas med, men förklara dem i `vinkel`.
