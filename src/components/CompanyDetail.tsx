@@ -4,7 +4,11 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import NewContactModal from "./NewContactModal"
+import CompanyRadarPanel from "./CompanyRadarPanel"
+import CompanyActivityLog from "./CompanyActivityLog"
 import { ownerBg, ownerText } from "@/lib/ownerColor";
+import { RADAR_REGIONS, type RadarStatus } from "@/lib/radar-constants"
+import type { Activity, User } from "@/lib/types"
 
 type Company = {
   id: string
@@ -14,16 +18,42 @@ type Company = {
   industry: string | null
   website: string | null
   address: string | null
+  city: string | null
+  region: string | null
   employees: number | null
+  employeesNote: string | null
+  switchboard: string | null
+  email: string | null
+  emailPattern: string | null
   notes: string | null
+  ownerId: string | null
+  owner: User | null
+  gapAmbition: number | null
+  gapDrive: number | null
+  gapRationale: string | null
+  gapAssessedAt: string | null
   createdAt: string
   updatedAt: string
+  signals: Array<{
+    id: string
+    type: string
+    summary: string
+    eventDate: string | null
+    sourceName: string | null
+    sourceUrl: string | null
+    strength: string | null
+    angle: string | null
+    status: RadarStatus
+    createdAt: string
+  }>
+  activities: Activity[]
   deals: Array<{
     id: string
     title: string
     value: number
     status: string
     createdAt: string
+    activities?: Activity[]
     owner: {
       name: string
       color: string
@@ -43,18 +73,12 @@ type Company = {
   }>
 }
 
-export default function CompanyDetail({ company: initialCompany }: { company: Company }) {
+export default function CompanyDetail({ company: initialCompany, users }: { company: Company; users: User[] }) {
   const [company, setCompany] = useState(initialCompany)
   const [isEditing, setIsEditing] = useState(false)
   const [showNewContactModal, setShowNewContactModal] = useState(false)
-  const [formData, setFormData] = useState({
-    orgNr: company.orgNr || "",
-    industry: company.industry || "",
-    website: company.website || "",
-    address: company.address || "",
-    employees: company.employees?.toString() || "",
-    notes: company.notes || "",
-  })
+  const [formData, setFormData] = useState(() => toForm(initialCompany))
+  const [saveError, setSaveError] = useState<string | null>(null)
   const router = useRouter()
 
   const totalValue = company.deals.reduce((sum, d) => sum + d.value, 0)
@@ -70,7 +94,13 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
         industry: formData.industry || null,
         website: formData.website || null,
         address: formData.address || null,
+        city: formData.city || null,
+        region: formData.region || null,
         employees: formData.employees ? parseInt(formData.employees, 10) : null,
+        employeesNote: formData.employeesNote || null,
+        switchboard: formData.switchboard || null,
+        email: formData.email || null,
+        emailPattern: formData.emailPattern || null,
         notes: formData.notes || null,
       }),
     })
@@ -78,20 +108,28 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
     if (res.ok) {
       const updated = await res.json()
       setCompany(updated)
+      setFormData(toForm(updated))
+      setSaveError(null)
       setIsEditing(false)
       router.refresh()
+    } else {
+      const data = await res.json().catch(() => null)
+      setSaveError(typeof data?.error === "string" ? data.error : "Kunde inte spara")
     }
   }
 
-  function handleCancel() {
-    setFormData({
-      orgNr: company.orgNr || "",
-      industry: company.industry || "",
-      website: company.website || "",
-      address: company.address || "",
-      employees: company.employees?.toString() || "",
-      notes: company.notes || "",
+  async function handleOwnerChange(ownerId: string) {
+    const res = await fetch(`/api/companies/${company.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ownerId: ownerId || null }),
     })
+    if (res.ok) setCompany(await res.json())
+  }
+
+  function handleCancel() {
+    setFormData(toForm(company))
+    setSaveError(null)
     setIsEditing(false)
   }
 
@@ -130,6 +168,28 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
             <div className="text-white/40 text-sm space-y-1">
               <div>{company.deals.length} deals · {company.contacts.length} kontakter</div>
               {company.orgNr && <div>Org.nr: {company.orgNr}</div>}
+            </div>
+            <div className="flex items-center gap-2 mt-3 text-sm">
+              <span className="text-white/40">Ansvarig</span>
+              {company.owner && (
+                <span
+                  className="owner-dot w-6 h-6"
+                  style={{ background: ownerBg(company.owner.color), color: ownerText(ownerBg(company.owner.color)) }}
+                >
+                  {company.owner.initial}
+                </span>
+              )}
+              <select
+                value={company.ownerId ?? ""}
+                onChange={(e) => handleOwnerChange(e.target.value)}
+                className="input w-auto py-1.5 px-3 text-sm"
+                aria-label="Ansvarig"
+              >
+                <option value="">Ingen</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
             </div>
           </div>
           {!isEditing ? (
@@ -217,6 +277,26 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
                   placeholder="Gata, postnummer, ort"
                 />
               </Field>
+              <Field label="Ort">
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className="input"
+                />
+              </Field>
+              <Field label="Region">
+                <select
+                  value={formData.region}
+                  onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                  className="input"
+                >
+                  <option value="">—</option>
+                  {RADAR_REGIONS.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </Field>
               <Field label="Antal anställda">
                 <input
                   type="number"
@@ -224,6 +304,41 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
                   onChange={(e) => setFormData({ ...formData, employees: e.target.value })}
                   className="input"
                   placeholder="0"
+                />
+              </Field>
+              <Field label="Anställda (osäker uppgift)">
+                <input
+                  type="text"
+                  value={formData.employeesNote}
+                  onChange={(e) => setFormData({ ...formData, employeesNote: e.target.value })}
+                  className="input"
+                  placeholder="t.ex. ca 130–150"
+                />
+              </Field>
+              <Field label="Växel">
+                <input
+                  type="tel"
+                  value={formData.switchboard}
+                  onChange={(e) => setFormData({ ...formData, switchboard: e.target.value })}
+                  className="input"
+                />
+              </Field>
+              <Field label="Allmän e-post">
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="input"
+                  placeholder="info@..."
+                />
+              </Field>
+              <Field label="E-postmönster (inte en adress)">
+                <input
+                  type="text"
+                  value={formData.emailPattern}
+                  onChange={(e) => setFormData({ ...formData, emailPattern: e.target.value })}
+                  className="input"
+                  placeholder="fornamn.efternamn@bolag.se"
                 />
               </Field>
               <Field label="Anteckningar">
@@ -234,6 +349,7 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
                   placeholder="Interna anteckningar..."
                 />
               </Field>
+              {saveError && <div className="text-sm text-[rgb(var(--c-lost))]">{saveError}</div>}
             </div>
           ) : (
             <div className="space-y-3 text-sm">
@@ -241,7 +357,12 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
               <InfoRow label="Bransch" value={company.industry} />
               <InfoRow label="Webbplats" value={company.website} link />
               <InfoRow label="Adress" value={company.address} />
-              <InfoRow label="Anställda" value={company.employees?.toString()} />
+              <InfoRow label="Ort" value={company.city} />
+              <InfoRow label="Region" value={company.region} />
+              <InfoRow label="Anställda" value={company.employees?.toString() ?? company.employeesNote} />
+              <InfoRow label="Växel" value={company.switchboard} />
+              <InfoRow label="Allmän e-post" value={company.email} />
+              <InfoRow label="E-postmönster" value={company.emailPattern} />
               <InfoRow label="Anteckningar" value={company.notes} multiline />
             </div>
           )}
@@ -329,6 +450,21 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
         )}
       </div>
 
+      {(company.signals.length > 0 || company.gapAmbition || company.gapDrive) && (
+        <CompanyRadarPanel
+          companyId={company.id}
+          signals={company.signals}
+          gap={{
+            gapAmbition: company.gapAmbition,
+            gapDrive: company.gapDrive,
+            gapRationale: company.gapRationale,
+            gapAssessedAt: company.gapAssessedAt,
+          }}
+        />
+      )}
+
+      <CompanyActivityLog companyId={company.id} activities={company.activities} deals={company.deals} />
+
       {showNewContactModal && (
         <NewContactModal
           onClose={() => setShowNewContactModal(false)}
@@ -337,6 +473,23 @@ export default function CompanyDetail({ company: initialCompany }: { company: Co
       )}
     </div>
   )
+}
+
+function toForm(c: Company) {
+  return {
+    orgNr: c.orgNr || "",
+    industry: c.industry || "",
+    website: c.website || "",
+    address: c.address || "",
+    city: c.city || "",
+    region: c.region || "",
+    employees: c.employees?.toString() || "",
+    employeesNote: c.employeesNote || "",
+    switchboard: c.switchboard || "",
+    email: c.email || "",
+    emailPattern: c.emailPattern || "",
+    notes: c.notes || "",
+  }
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

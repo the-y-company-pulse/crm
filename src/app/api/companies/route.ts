@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth-utils"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { normalizeOrgNr } from "@/lib/radar"
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAuth()
@@ -51,11 +52,16 @@ export async function POST(req: NextRequest) {
 
   const normalized = parsed.data.name.trim().toLowerCase()
 
+  const orgNr = parsed.data.orgNr ? normalizeOrgNr(parsed.data.orgNr) ?? parsed.data.orgNr.trim() : null
+  if (orgNr && (await prisma.company.findUnique({ where: { orgNr } }))) {
+    return NextResponse.json({ error: "Ett företag med det org.nr:et finns redan" }, { status: 409 })
+  }
+
   const company = await prisma.company.create({
     data: {
       name: parsed.data.name.trim(),
       nameNorm: normalized,
-      orgNr: parsed.data.orgNr,
+      orgNr,
       industry: parsed.data.industry,
       website: parsed.data.website,
       address: parsed.data.address,

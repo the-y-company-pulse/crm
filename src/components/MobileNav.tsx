@@ -37,6 +37,18 @@ export default function MobileNav({ currentTab, isAdmin, onClose, pendingEmailCo
           </Link>
 
           <Link
+            href="/radar"
+            onClick={onClose}
+            className={`px-5 py-3 text-lg font-medium rounded-md transition-colors ${
+              isActive("radar")
+                ? "bg-neon text-ink-950"
+                : "text-white/70 hover:text-white hover:bg-white/[0.05]"
+            }`}
+          >
+            Radar
+          </Link>
+
+          <Link
             href="/foretag"
             onClick={onClose}
             className={`px-5 py-3 text-lg font-medium rounded-md transition-colors ${

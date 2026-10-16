@@ -7,7 +7,7 @@ import MobileNav from "./MobileNav";
 import ThemeToggle from "./ThemeToggle";
 
 type Props = {
-  currentTab: "pipeline" | "statistik" | "foretag" | "kontakter" | "projekt" | "mail-inbox";
+  currentTab: "pipeline" | "radar" | "statistik" | "foretag" | "kontakter" | "projekt" | "mail-inbox";
   isAdmin?: boolean;
   pendingEmailCount?: number;
 };
@@ -44,6 +44,16 @@ export default function TopNav({ currentTab, isAdmin, pendingEmailCount = 0 }: P
             }`}
           >
             Pipeline
+          </Link>
+          <Link
+            href="/radar"
+            className={`px-5 py-2.5 text-sm font-medium rounded-md transition-colors ${
+              currentTab === "radar"
+                ? "bg-white/[0.10] text-white"
+                : "text-white/50 hover:text-white/80"
+            }`}
+          >
+            Radar
           </Link>
           <Link
             href="/statistik"

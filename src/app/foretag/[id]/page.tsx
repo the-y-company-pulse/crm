@@ -1,6 +1,7 @@
 import { auth } from "../../../../auth"
 import { redirect, notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
+import { companyDetailInclude } from "@/lib/company-include"
 import TopNav from "@/components/TopNav"
 import CompanyDetail from "@/components/CompanyDetail"
 
@@ -14,35 +15,23 @@ export default async function CompanyDetailPage({
 
   const { id } = await params
 
-  const company = await prisma.company.findUnique({
-    where: { id },
-    include: {
-      deals: {
-        include: {
-          owner: true,
-          stage: true,
-        },
-        orderBy: { createdAt: "desc" },
-      },
-      contacts: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-          phone: true,
-          title: true,
-        },
-        orderBy: { fullName: "asc" },
-      },
-    },
-  })
+  const [company, users] = await Promise.all([
+    prisma.company.findUnique({
+      where: { id },
+      include: companyDetailInclude,
+    }),
+    prisma.user.findMany({ orderBy: { name: "asc" } }),
+  ])
 
   if (!company) notFound()
 
   return (
     <main className="min-h-screen">
       <TopNav currentTab="foretag" isAdmin={session.user.role === "admin"} />
-      <CompanyDetail company={JSON.parse(JSON.stringify(company))} />
+      <CompanyDetail
+        company={JSON.parse(JSON.stringify(company))}
+        users={JSON.parse(JSON.stringify(users))}
+      />
     </main>
   )
 }

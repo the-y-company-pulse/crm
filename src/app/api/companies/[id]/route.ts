@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth-utils"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { normalizeOrgNr } from "@/lib/radar"
+import { companyDetailInclude } from "@/lib/company-include"
 
 const UpdateCompanySchema = z.object({
   name: z.string().min(1).optional(),
@@ -10,8 +12,19 @@ const UpdateCompanySchema = z.object({
   website: z.string().url().nullable().optional(),
   address: z.string().nullable().optional(),
   employees: z.number().int().nonnegative().nullable().optional(),
+  employeesNote: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  region: z.string().nullable().optional(),
+  switchboard: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  emailPattern: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  ownerId: z.string().nullable().optional(),
+  gapAmbition: z.number().int().min(1).max(3).nullable().optional(),
+  gapDrive: z.number().int().min(1).max(3).nullable().optional(),
+  gapRationale: z.string().nullable().optional(),
 })
+
 
 export async function GET(
   req: NextRequest,
@@ -24,18 +37,7 @@ export async function GET(
 
   const company = await prisma.company.findUnique({
     where: { id },
-    include: {
-      deals: {
-        include: {
-          owner: true,
-          stage: true,
-        },
-        orderBy: { createdAt: "desc" },
-      },
-      contacts: {
-        orderBy: { fullName: "asc" },
-      },
-    },
+    include: companyDetailInclude,
   })
 
   if (!company) {
@@ -67,22 +69,26 @@ export async function PATCH(
     updateData.nameNorm = parsed.data.name.trim().toLowerCase()
   }
 
-  const company = await prisma.company.update({
-    where: { id },
-    data: updateData,
-    include: {
-      deals: {
-        include: {
-          owner: true,
-          stage: true,
-        },
-        orderBy: { createdAt: "desc" },
-      },
-      contacts: {
-        orderBy: { fullName: "asc" },
-      },
-    },
-  })
+  // orgNr is unique; store it in one canonical format
+  if (parsed.data.orgNr) {
+    updateData.orgNr = normalizeOrgNr(parsed.data.orgNr) ?? parsed.data.orgNr.trim()
+  }
 
-  return NextResponse.json(company)
+  if ("gapAmbition" in parsed.data || "gapDrive" in parsed.data || "gapRationale" in parsed.data) {
+    updateData.gapAssessedAt = new Date()
+  }
+
+  try {
+    const company = await prisma.company.update({
+      where: { id },
+      data: updateData,
+      include: companyDetailInclude,
+    })
+    return NextResponse.json(company)
+  } catch (e: any) {
+    if (e?.code === "P2002") {
+      return NextResponse.json({ error: "Ett annat företag har redan det org.nr:et" }, { status: 409 })
+    }
+    throw e
+  }
 }
