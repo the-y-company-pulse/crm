@@ -26,7 +26,7 @@ Segmentet räknas ut automatiskt från `anstallda`/`antal_chefer` och `orgnr`. A
 | `Ny HR-/L&D-ansvarig` | Ny HR-chef, L&D-ansvarig eller Talent Manager, främst i segment B. De köper platser åt enskilda chefer | Inom 100 dagar | Utnämningar, platsannonser |
 | `Lovar ledarutveckling i annonser` | Platsannonser som utlovar "ledarskapsutveckling" eller "ledarprogram" utan att bolaget har ett eget. De har lovat något de behöver köpa | Direkt | Platsannonser |
 | `Kraftig tillväxt` | Bolaget växer och utser chefer internt | Direkt | Gasell-listor, branschpress |
-| `Återkommande köpare` | **Skapas av CRM:et självt**, 6 månader efter att ett bolag skickat deltagare till ett program. Skörden ska inte skriva denna typ | – | CRM:ets deltagardata |
+| `Återkommande köpare` | **Skapas av CRM:et självt** för bolag med deltagare i ett pågående eller avslutat program, en rad per bolag. Bolag som redan bokat nästa programstart hoppas över. Skörden ska inte skriva denna typ | – | CRM:ets deltagardata |
 
 ## Säljfönster
 
