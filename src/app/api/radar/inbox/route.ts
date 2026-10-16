@@ -11,7 +11,7 @@ const num = z.number().finite().nullable().optional()
 const int = z.number().int().nullable().optional()
 
 const InboxRowSchema = z.object({
-  radar: z.enum(["kultur", "ledarskap"]).default("kultur"),
+  radar: z.enum(["kultur", "skraddarsytt", "ledarskap"]).default("kultur"),
   bolag: z.string().trim().min(1, "Bolag saknas"),
   typ: z.string().trim().min(1),
   signal: z.string().trim().min(1, "Signaltext saknas"),

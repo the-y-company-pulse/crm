@@ -13,10 +13,11 @@ import {
   RADARS,
   STRENGTH_RANK,
   WARM_SIGNAL_TYPES,
+  REPEAT_BUYER_TYPE,
   type RadarKey,
   type RadarStatus,
 } from "@/lib/radar-constants"
-import { FIT_RULES, evaluateFit, fitScore, type FitCriterion, type FitState } from "@/lib/radar-fit"
+import { FIT_RULES, evaluateRadarFit, fitScore, type FitCriterion, type FitState } from "@/lib/radar-fit"
 import type { User } from "@/lib/types"
 import NewSignalModal from "./NewSignalModal"
 
@@ -81,6 +82,7 @@ type Props = {
   users: User[]
   failed: { id: string; bolag: string; processError: string | null }[]
   currentUserId: string
+  nextProgram?: { id: string; name: string; startDate: string; booked: number; seats: number } | null
 }
 
 type SortKey = "added" | "event" | "strength" | "company" | "fit"
@@ -111,6 +113,11 @@ function isGapTopProspect(s: RadarSignal) {
   return s.company.gapAmbition === 3 && s.company.gapDrive === 1
 }
 
+// Repeat buyers are judged on the relationship, not the company profile
+function showsFit(s: RadarSignal) {
+  return s.type !== REPEAT_BUYER_TYPE
+}
+
 function pastParticipants(s: RadarSignal) {
   return s.company.contacts.reduce((n, c) => n + (c._count?.participants ?? 0), 0)
 }
@@ -122,8 +129,9 @@ const FIT_STYLE: Record<FitState, string> = {
 }
 const FIT_MARK: Record<FitState, string> = { ok: "✓", no: "✕", unknown: "?" }
 
-export default function RadarBoard({ radar, signals: initial, users, failed, currentUserId }: Props) {
-  const isLeadership = radar === "ledarskap"
+export default function RadarBoard({ radar, signals: initial, users, failed, currentUserId, nextProgram }: Props) {
+  const isLeadership = radar === "ledarskap" // radius filter + segments
+  const hasFit = radar !== "kultur" // fit profile instead of signal strength
   const isMobile = useIsMobile()
   const router = useRouter()
   const [signals, setSignals] = useState(initial)
@@ -133,7 +141,7 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
   const [strength, setStrength] = useState("")
   const [status, setStatus] = useState("active")
   const [owner, setOwner] = useState("")
-  const [sort, setSort] = useState<SortKey>(isLeadership ? "fit" : "added")
+  const [sort, setSort] = useState<SortKey>(hasFit ? "fit" : "added")
   const [radiusKm, setRadiusKm] = useState(FIT_RULES.defaultRadiusKm) // 0 = any distance
   const [fitFilter, setFitFilter] = useState<"" | "full" | "nomiss">("")
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -147,25 +155,27 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
 
   const fitById = useMemo(() => {
     const m = new Map<string, FitCriterion[]>()
-    if (isLeadership) for (const s of signals) m.set(s.id, evaluateFit(s.company, radiusKm || 1000))
+    if (hasFit) for (const s of signals) m.set(s.id, evaluateRadarFit(s.company, radar, radiusKm || 1000) ?? [])
     return m
-  }, [signals, radiusKm, isLeadership])
+  }, [signals, radiusKm, hasFit, radar])
 
   // In scope: target regions (kultur) or not known to be outside the radius (ledarskap)
   const inScope = (s: RadarSignal) =>
     isLeadership
       ? !radiusKm || fitById.get(s.id)?.find((c) => c.key === "near")?.state !== "no"
+      : radar === "skraddarsytt"
+        ? fitById.get(s.id)?.find((c) => c.key === "area")?.state !== "no"
       : RADAR_TARGET_REGIONS.includes(s.company.region ?? "Okänd")
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     const list = signals.filter((s) => {
       if (type && s.type !== type) return false
-      if (isLeadership) {
+      if (hasFit) {
         if (!inScope(s)) return false
         const fit = fitById.get(s.id) ?? []
-        if (fitFilter === "full" && !fit.every((c) => c.state === "ok")) return false
-        if (fitFilter === "nomiss" && fit.some((c) => c.state === "no")) return false
+        if (showsFit(s) && fitFilter === "full" && !fit.every((c) => c.state === "ok")) return false
+        if (showsFit(s) && fitFilter === "nomiss" && fit.some((c) => c.state === "no")) return false
       } else {
         const r = s.company.region ?? "Okänd"
         if (region === "target" && !RADAR_TARGET_REGIONS.includes(r)) return false
@@ -204,8 +214,11 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
           return byStrength(a, b) || b.createdAt.localeCompare(a.createdAt)
         case "company":
           return a.company.name.localeCompare(b.company.name, "sv")
-        case "fit":
-          return fitScore(fitById.get(b.id) ?? []) - fitScore(fitById.get(a.id) ?? []) || byAdded(a, b)
+        case "fit": {
+          // Repeat buyers first, then by how well the profile matches
+          const rank = (x: RadarSignal) => (showsFit(x) ? fitScore(fitById.get(x.id) ?? []) : 2)
+          return rank(b) - rank(a) || byAdded(a, b)
+        }
         default:
           return byAdded(a, b)
       }
@@ -311,14 +324,14 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
         )}
       </div>
       <FilterSelect value={type} onChange={setType} label="Alla signaltyper" options={RADARS[radar].types} />
-      {isLeadership ? (
+      {hasFit ? (
         <>
-          <select className="input w-auto py-2.5 text-sm" value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
+          {isLeadership && <select className="input w-auto py-2.5 text-sm" value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
             <option value={50}>Inom 5 mil</option>
             <option value={75}>Inom 7,5 mil</option>
             <option value={100}>Inom 10 mil</option>
             <option value={0}>Alla avstånd</option>
-          </select>
+          </select>}
           <select className="input w-auto py-2.5 text-sm" value={fitFilter} onChange={(e) => setFitFilter(e.target.value as typeof fitFilter)}>
             <option value="">All matchning</option>
             <option value="nomiss">Inga kända missar</option>
@@ -352,7 +365,7 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
         ))}
       </select>
       <select className="input w-auto py-2.5 text-sm" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-        {isLeadership && <option value="fit">Bäst matchning</option>}
+        {hasFit && <option value="fit">Bäst matchning</option>}
         <option value="added">Senast tillagd</option>
         <option value="event">Händelsedatum</option>
         <option value="strength">Styrka</option>
@@ -379,10 +392,20 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
         </div>
         <h1 className="font-display text-2xl md:text-3xl text-white mb-2">{RADARS[radar].label}</h1>
         <div className="text-white/40 text-xs md:text-sm">
-          {inTarget.length} signaler {isLeadership ? (radiusKm ? `inom ${radiusKm / 10} mil` : "") : "i målområdet"} · {companyCount} bolag · <span className="text-neon">{newCount} nya</span>
+          {inTarget.length} signaler {isLeadership ? (radiusKm ? `inom ${(radiusKm / 10).toLocaleString("sv-SE")} mil` : "") : "i målområdet"} · {companyCount} bolag · <span className="text-neon">{newCount} nya</span>
           {outsideCount > 0 && <> · {outsideCount} utanför</>}
           {filtered.length !== inTarget.length && <> · visar {filtered.length}</>}
         </div>
+        {nextProgram && (
+          <Link href={`/projekt/${nextProgram.id}`} className="inline-block mt-2 text-xs md:text-sm text-white/60 hover:text-white">
+            Nästa start: <span className="text-white/85 font-medium">{nextProgram.name}</span>{" "}
+            {new Date(nextProgram.startDate).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })} ·{" "}
+            {nextProgram.booked}/{nextProgram.seats} platser bokade
+            {Math.round((new Date(nextProgram.startDate).getTime() - Date.now()) / 86400000) <= 120 && (
+              <span className="ml-2 text-neon">· säljfönster nu</span>
+            )}
+          </Link>
+        )}
       </div>
       {/* Manual entry is occasional (e.g. DI:s Gasell-lista in November) — kept low-key */}
       <button
@@ -460,9 +483,9 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
                         {[s.company.city, s.company.industry].filter(Boolean).join(" · ")}
                       </div>
                     </div>
-                    {!isLeadership && <StrengthLabel strength={s.strength} />}
+                    {!hasFit && <StrengthLabel strength={s.strength} />}
                   </div>
-                  {isLeadership && <FitChips fit={fitById.get(s.id) ?? []} className="mb-2" />}
+                  {hasFit && showsFit(s) && <FitChips fit={fitById.get(s.id) ?? []} className="mb-2" />}
                   <div className="text-xs text-white/50 mb-2">{s.type}{s.eventDate && ` · ${s.eventDate}`}</div>
                   <p className={`text-sm text-white/80 ${expanded === s.id ? "" : "line-clamp-2"}`}>{s.summary}</p>
                 </button>
@@ -493,7 +516,7 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
             <tr>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Bolag</th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Signal</th>
-              <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">{isLeadership ? "Profil" : "Styrka"}</th>
+              <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">{hasFit ? "Profil" : "Styrka"}</th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Ansvarig</th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Status</th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Pipeline</th>
@@ -507,7 +530,7 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
                 <RadarRow
                   key={s.id}
                   s={s}
-                  fit={isLeadership ? fitById.get(s.id) ?? [] : null}
+                  fit={hasFit && showsFit(s) ? fitById.get(s.id) ?? [] : null}
                   users={users}
                   expanded={expanded === s.id}
                   busy={busy === s.id}
@@ -764,9 +787,8 @@ function OwnerSelect({ s, users, onChange }: { s: RadarSignal; users: User[]; on
 }
 
 function DealAction({ s, busy, onCreate }: { s: RadarSignal; busy: boolean; onCreate: () => void }) {
-  if (s.company.deals.some((d) => d.status === "won")) {
-    return <span className="text-xs font-semibold text-[rgb(var(--c-won))]">Kund</span>
-  }
+  // Customers can still get a new deal (e.g. seats in the next intake) unless one is already open
+  const isCustomer = s.company.deals.some((d) => d.status === "won")
   if (openDeal(s)) {
     return (
       <Link href={`/foretag/${s.company.id}`} className="text-xs text-neon hover:underline whitespace-nowrap">
@@ -775,12 +797,15 @@ function DealAction({ s, busy, onCreate }: { s: RadarSignal; busy: boolean; onCr
     )
   }
   return (
-    <button
-      onClick={onCreate}
-      disabled={busy}
-      className="text-xs font-medium rounded-md border border-white/15 bg-navy/60 text-white/80 hover:border-neon/60 hover:text-white px-2.5 py-1.5 whitespace-nowrap disabled:opacity-40"
-    >
-      {busy ? "Skapar..." : "Skapa deal"}
-    </button>
+    <div className="flex flex-col items-start gap-1">
+      {isCustomer && <span className="text-[11px] font-semibold text-[rgb(var(--c-won))]">Kund</span>}
+      <button
+        onClick={onCreate}
+        disabled={busy}
+        className="text-xs font-medium rounded-md border border-white/15 bg-navy/60 text-white/80 hover:border-neon/60 hover:text-white px-2.5 py-1.5 whitespace-nowrap disabled:opacity-40"
+      >
+        {busy ? "Skapar..." : isCustomer ? "Ny deal" : "Skapa deal"}
+      </button>
+    </div>
   )
 }

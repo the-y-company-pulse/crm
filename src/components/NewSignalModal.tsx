@@ -114,7 +114,7 @@ function rowError(r: Row, radar: RadarKey) {
 export default function NewSignalModal({ radar, onClose, onCreated }: Props) {
   const isLeadership = radar === "ledarskap"
   const types = RADARS[radar].types
-  const EMPTY: Row = { typ: isLeadership ? "Passar profilen" : "Kraftig tillväxt", region: "Västra Götaland" }
+  const EMPTY: Row = { typ: radar === "kultur" ? "Kraftig tillväxt" : "Passar profilen", region: "Västra Götaland" }
   const [mode, setMode] = useState<"single" | "paste">("single")
   const [form, setForm] = useState<Row>(EMPTY)
   const [showContact, setShowContact] = useState(false)
@@ -209,12 +209,12 @@ export default function NewSignalModal({ radar, onClose, onCreated }: Props) {
                   </select>
                 </Field>
               </div>
-              <Field label={isLeadership ? "Varför passar de? *" : "Vad har hänt? *"}>
+              <Field label={radar !== "kultur" ? "Varför passar de? *" : "Vad har hänt? *"}>
                 <textarea
                   className="input min-h-[80px] text-sm"
                   value={form.signal ?? ""}
                   onChange={set("signal")}
-                  placeholder={isLeadership ? "Varför passar de? T.ex. 'Lönsamt familjeföretag, ca 15 chefer, växer.'" : "1–2 meningar, t.ex. 'Gasell 2026, +240 % på tre år.'"}
+                  placeholder={radar !== "kultur" ? "Varför passar de? T.ex. 'Lönsamt familjeföretag, ca 15 chefer, växer.'" : "1–2 meningar, t.ex. 'Gasell 2026, +240 % på tre år.'"}
                 />
               </Field>
               <Field label="Vinkel">
