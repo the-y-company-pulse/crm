@@ -68,6 +68,17 @@ model Company {
   ownerId String?
   owner   User?   @relation("CompanyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
+  // Financial profile (Ledarskapsradarn) — from the latest annual report. Amounts in MSEK, ratios in %.
+  fiscalYear              Int? // Bokslutsår the figures refer to
+  revenueMsek             Float? // Omsättning
+  operatingProfitMsek     Float? // Rörelseresultat, latest year
+  operatingProfitPrevMsek Float? // Rörelseresultat, year before
+  operatingMarginPct      Float? // Rörelsemarginal
+  equityRatioPct          Float? // Soliditet
+  quickRatioPct           Float? // Kassalikviditet
+  managers                Int? // Number of managers/leaders, when published
+  distanceKm              Int? // Override for distance to Göteborg; otherwise derived from city
+
   // Glappanalys (Kulturradarn): ambition vs. how well the values drive it. A hypothesis, not a diagnosis.
   gapAmbition   Int? // 1-3
   gapDrive      Int? // 1-3 (värderingarnas drivkraft)
@@ -369,6 +380,7 @@ model EmailLog {
 // against its development. A company can collect many signals over time.
 model Signal {
   id        String  @id @default(cuid())
+  radar     String  @default("kultur") // "kultur" | "ledarskap"
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -394,6 +406,7 @@ model Signal {
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
+  @@index([radar])
   @@index([status])
   @@index([type])
   @@map("signals")
@@ -404,33 +417,44 @@ model Signal {
 // Column names match the radar export so the harvest prompt can write them as-is.
 // ids/timestamps are DB-generated so plain SQL inserts work.
 model RadarInbox {
-  id               String  @id @default(dbgenerated("(gen_random_uuid())::text"))
-  slug             String? // Company name slug from the harvest, e.g. "xl-bygg-herrljunga"
-  typ              String
-  bolag            String
-  orgnr            String?
-  ort              String?
-  bransch          String?
-  region           String?
-  anstallda        String?
-  signal           String  @db.Text
-  datum            String?
-  kalla            String?
-  url              String?
-  styrka           String?
-  vinkel           String? @db.Text
-  kontakt          String?
-  kontaktRoll      String? @map("kontakt_roll")
-  telefon          String?
-  vaxel            String?
-  epost            String?
-  epostMonster     String? @map("epost_monster")
-  kontaktKalla     String? @map("kontakt_kalla")
-  kontaktKommentar String? @map("kontakt_kommentar") @db.Text
-  ambition         Int? // Glappanalys 1-3 (optional, when built)
-  drivkraft        Int? // Glappanalys 1-3
-  glappMotivering  String? @map("glapp_motivering") @db.Text
-  tillagd          String? // ÅÅÅÅ-MM-DD as reported by the harvest
+  id                    String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  radar                 String  @default("kultur") // "kultur" | "ledarskap"
+  slug                  String? // Company name slug from the harvest, e.g. "xl-bygg-herrljunga"
+  typ                   String
+  bolag                 String
+  orgnr                 String?
+  ort                   String?
+  bransch               String?
+  region                String?
+  anstallda             String?
+  signal                String  @db.Text
+  datum                 String?
+  kalla                 String?
+  url                   String?
+  styrka                String?
+  vinkel                String? @db.Text
+  kontakt               String?
+  kontaktRoll           String? @map("kontakt_roll")
+  telefon               String?
+  vaxel                 String?
+  epost                 String?
+  epostMonster          String? @map("epost_monster")
+  kontaktKalla          String? @map("kontakt_kalla")
+  kontaktKommentar      String? @map("kontakt_kommentar") @db.Text
+  ambition              Int? // Glappanalys 1-3 (optional, when built)
+  drivkraft             Int? // Glappanalys 1-3
+  glappMotivering       String? @map("glapp_motivering") @db.Text
+  // Ledarskapsradarn: financial profile from the latest annual report (MSEK / %)
+  bokslutsar            Int?
+  omsattningMsek        Float?  @map("omsattning_msek")
+  rorelseresultatMsek   Float?  @map("rorelseresultat_msek")
+  rorelseresultatFgMsek Float?  @map("rorelseresultat_fg_msek")
+  rorelsemarginal       Float?
+  soliditet             Float?
+  kassalikviditet       Float?
+  antalChefer           Int?    @map("antal_chefer")
+  avstandKm             Int?    @map("avstand_km")
+  tillagd               String? // ÅÅÅÅ-MM-DD as reported by the harvest
 
   createdAt    DateTime  @default(now()) @map("created_at")
   processedAt  DateTime? @map("processed_at")

@@ -47,13 +47,28 @@ export async function POST(
     (await prisma.stage.findFirst({ where: { status: null }, orderBy: { order: "asc" } }))
   if (!stage) return NextResponse.json({ error: "Ingen öppen pipeline-stage finns" }, { status: 500 })
 
+  // Leadership prospects are sold into the next open-program intake
+  const program =
+    signal.radar === "ledarskap"
+      ? await prisma.project.findFirst({
+          where: {
+            type: "ledarskapsprogram",
+            name: { startsWith: "The Y Leadership Program" },
+            status: { in: ["planned", "open"] },
+            startDate: { gte: new Date() },
+          },
+          orderBy: { startDate: "asc" },
+        })
+      : null
+
   const ownerId = parsed.data.ownerId ?? signal.company.ownerId ?? userId!
   const contact = signal.company.contacts[0] ?? null
 
   const deal = await prisma.$transaction(async (tx) => {
     const created = await tx.deal.create({
       data: {
-        title: `${signal.company.name} – ${signal.type}`,
+        title: program ? `${signal.company.name} – ${program.name}` : `${signal.company.name} – ${signal.type}`,
+        projectId: program?.id ?? null,
         companyId: signal.companyId,
         contactId: contact?.id ?? null,
         company: signal.company.name,

@@ -19,7 +19,7 @@ export {
   STRENGTH_RANK,
   type RadarStatus,
 } from "./radar-constants"
-import { RADAR_SIGNAL_TYPES, RADAR_STRENGTHS, RADAR_REGIONS } from "./radar-constants"
+import { RADAR_STRENGTHS, RADAR_REGIONS, RADARS, isRadarKey } from "./radar-constants"
 
 // Same normalisation as the rest of the CRM (companies.nameNorm)
 export function nameNorm(name: string) {
@@ -120,6 +120,21 @@ async function findCompany(tx: Tx, row: RadarInbox) {
   return hits.length === 1 ? hits[0] : null
 }
 
+// Annual-report figures from the inbox row. Only taken when the fiscal year is
+// known, so figures from different years are never mixed.
+function financialFields(row: RadarInbox) {
+  if (row.bokslutsar == null) return {} as Record<string, never>
+  return {
+    fiscalYear: row.bokslutsar,
+    revenueMsek: row.omsattningMsek,
+    operatingProfitMsek: row.rorelseresultatMsek,
+    operatingProfitPrevMsek: row.rorelseresultatFgMsek,
+    operatingMarginPct: row.rorelsemarginal,
+    equityRatioPct: row.soliditet,
+    quickRatioPct: row.kassalikviditet,
+  }
+}
+
 async function upsertCompany(tx: Tx, row: RadarInbox) {
   const orgNr = normalizeOrgNr(row.orgnr)
   const employees = parseEmployees(row.anstallda)
@@ -143,6 +158,8 @@ async function upsertCompany(tx: Tx, row: RadarInbox) {
     emailPattern: clean(row.epostMonster),
   }
 
+  const financials = financialFields(row)
+
   const existing = await findCompany(tx, row)
   if (!existing) {
     return tx.company.create({
@@ -150,6 +167,9 @@ async function upsertCompany(tx: Tx, row: RadarInbox) {
         name: row.bolag.trim(),
         nameNorm: nameNorm(row.bolag),
         ...fields,
+        ...financials,
+        managers: row.antalChefer ?? null,
+        distanceKm: row.avstandKm ?? null,
         gapAmbition: ambition,
         gapDrive: drive,
         gapRationale: clean(row.glappMotivering),
@@ -163,7 +183,13 @@ async function upsertCompany(tx: Tx, row: RadarInbox) {
   for (const [k, v] of Object.entries(fields) as [keyof typeof fields, string | number | null][]) {
     if (v != null && (existing[k] == null || existing[k] === "")) (update as any)[k] = v
   }
-  // "Okänd" region may be upgraded to a known one
+  // Financials describe one fiscal year: replace them all when a newer (or first) year arrives
+  if (financials.fiscalYear != null && (existing.fiscalYear == null || financials.fiscalYear > existing.fiscalYear)) {
+    Object.assign(update, financials)
+  }
+  if (row.antalChefer != null && existing.managers == null) update.managers = row.antalChefer
+  if (row.avstandKm != null && existing.distanceKm == null) update.distanceKm = row.avstandKm
+    // "Okänd" region may be upgraded to a known one
   if (region && region !== "Okänd" && existing.region === "Okänd") update.region = region
   if (existing.gapAmbition == null && existing.gapDrive == null && (ambition || drive)) {
     update.gapAmbition = ambition
@@ -228,8 +254,10 @@ async function upsertContact(tx: Tx, row: RadarInbox, companyId: string) {
 }
 
 async function processRow(row: RadarInbox) {
-  const type = oneOf(RADAR_SIGNAL_TYPES, row.typ)
-  if (!type) throw new Error(`Okänd signaltyp: "${row.typ}"`)
+  if (!isRadarKey(row.radar)) throw new Error(`Okänd radar: "${row.radar}"`)
+  const radar = row.radar
+  const type = RADARS[radar].types.includes(row.typ.trim()) ? row.typ.trim() : null
+  if (!type) throw new Error(`Okänd signaltyp för ${RADARS[radar].label}: "${row.typ}"`)
   if (!row.bolag?.trim()) throw new Error("Bolagsnamn saknas")
   if (!row.signal?.trim()) throw new Error("Signaltext saknas")
 
@@ -239,19 +267,27 @@ async function processRow(row: RadarInbox) {
 
     const sourceUrl = clean(row.url)
     // Same company + type + source = the same event re-reported: refresh the
-    // text only (status is never touched).
-    const duplicate = sourceUrl
-      ? await tx.signal.findFirst({ where: { companyId: company.id, type, sourceUrl } })
-      : null
+    // text only (status is never touched). The leadership fit record exists
+    // once per company regardless of source.
+    const isFitRecord = radar === "ledarskap" && type === "Passar profilen"
+    const duplicate = isFitRecord
+      ? await tx.signal.findFirst({ where: { companyId: company.id, radar, type } })
+      : sourceUrl
+        ? await tx.signal.findFirst({ where: { companyId: company.id, radar, type, sourceUrl } })
+        : null
 
     if (duplicate) {
       await tx.signal.update({
         where: { id: duplicate.id },
-        data: { summary: row.signal.trim() },
+        data: {
+          summary: row.signal.trim(),
+          ...(isFitRecord && sourceUrl ? { sourceUrl, sourceName: clean(row.kalla) } : {}),
+        },
       })
     } else {
       await tx.signal.create({
         data: {
+          radar,
           companyId: company.id,
           type,
           summary: row.signal.trim(),

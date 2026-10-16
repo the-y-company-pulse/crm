@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import NewContactModal from "./NewContactModal"
 import CompanyRadarPanel from "./CompanyRadarPanel"
 import CompanyActivityLog from "./CompanyActivityLog"
+import CompanyProfilePanel from "./CompanyProfilePanel"
 import { ownerBg, ownerText } from "@/lib/ownerColor";
 import { RADAR_REGIONS, type RadarStatus } from "@/lib/radar-constants"
 import type { Activity, User } from "@/lib/types"
@@ -32,10 +33,20 @@ type Company = {
   gapDrive: number | null
   gapRationale: string | null
   gapAssessedAt: string | null
+  fiscalYear: number | null
+  revenueMsek: number | null
+  operatingProfitMsek: number | null
+  operatingProfitPrevMsek: number | null
+  operatingMarginPct: number | null
+  equityRatioPct: number | null
+  quickRatioPct: number | null
+  managers: number | null
+  distanceKm: number | null
   createdAt: string
   updatedAt: string
   signals: Array<{
     id: string
+    radar: string
     type: string
     summary: string
     eventDate: string | null
@@ -462,6 +473,8 @@ export default function CompanyDetail({ company: initialCompany, users }: { comp
           }}
         />
       )}
+
+      <CompanyProfilePanel companyId={company.id} company={company} />
 
       <CompanyActivityLog companyId={company.id} activities={company.activities} deals={company.deals} />
 

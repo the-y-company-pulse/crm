@@ -20,3 +20,25 @@ export const RADAR_TARGET_REGIONS: readonly string[] = ["Västra Götaland", "Ha
 export type RadarStatus = (typeof RADAR_STATUSES)[number]
 
 export const STRENGTH_RANK: Record<string, number> = { "Hög": 3, "Medel": 2, "Låg": 1 }
+
+// Ledarskapsradarn: companies that fit the open leadership program profile.
+// "Passar profilen" is the base fit record (one per company); the others are
+// triggers that make the timing better.
+export const LEADERSHIP_SIGNAL_TYPES = [
+  "Passar profilen",
+  "Rekryterar chefer",
+  "Ny chefsnivå / omorganisation",
+  "Ny VD / ledningsgrupp",
+  "Kraftig tillväxt",
+] as const
+
+export const RADARS = {
+  kultur: { label: "Kulturradarn", types: RADAR_SIGNAL_TYPES as readonly string[] },
+  ledarskap: { label: "Ledarskapsradarn", types: LEADERSHIP_SIGNAL_TYPES as readonly string[] },
+} as const
+
+export type RadarKey = keyof typeof RADARS
+
+export function isRadarKey(v: unknown): v is RadarKey {
+  return v === "kultur" || v === "ledarskap"
+}

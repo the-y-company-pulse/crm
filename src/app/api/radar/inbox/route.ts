@@ -3,13 +3,17 @@ import { requireAuth } from "@/lib/auth-utils"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { processRadarInbox } from "@/lib/radar"
-import { RADAR_SIGNAL_TYPES } from "@/lib/radar-constants"
+import { RADARS } from "@/lib/radar-constants"
 
 const opt = z.string().trim().nullable().optional()
 
+const num = z.number().finite().nullable().optional()
+const int = z.number().int().nullable().optional()
+
 const InboxRowSchema = z.object({
+  radar: z.enum(["kultur", "ledarskap"]).default("kultur"),
   bolag: z.string().trim().min(1, "Bolag saknas"),
-  typ: z.enum(RADAR_SIGNAL_TYPES, { errorMap: () => ({ message: "Ogiltig signaltyp" }) }),
+  typ: z.string().trim().min(1),
   signal: z.string().trim().min(1, "Signaltext saknas"),
   orgnr: opt,
   ort: opt,
@@ -29,7 +33,16 @@ const InboxRowSchema = z.object({
   epostMonster: opt,
   kontaktKalla: opt,
   kontaktKommentar: opt,
-})
+  bokslutsar: int,
+  omsattningMsek: num,
+  rorelseresultatMsek: num,
+  rorelseresultatFgMsek: num,
+  rorelsemarginal: num,
+  soliditet: num,
+  kassalikviditet: num,
+  antalChefer: int,
+  avstandKm: int,
+}).refine((r) => RADARS[r.radar].types.includes(r.typ), { message: "Ogiltig signaltyp", path: ["typ"] })
 
 const BodySchema = z.object({
   rows: z.array(InboxRowSchema).min(1).max(500),

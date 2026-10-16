@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { RADAR_STATUSES, type RadarStatus } from "@/lib/radar-constants"
+import { RADAR_STATUSES, RADARS, isRadarKey, type RadarStatus } from "@/lib/radar-constants"
 
 type Signal = {
   id: string
+  radar: string
   type: string
   summary: string
   eventDate: string | null
@@ -92,6 +93,7 @@ export default function CompanyRadarPanel({ companyId, signals: initialSignals, 
               <li key={s.id} className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.05]">
                 <div className="flex items-start justify-between gap-3 mb-1">
                   <div className="text-xs text-white/50">
+                    {isRadarKey(s.radar) && <span className="text-white/40">{RADARS[s.radar].label} · </span>}
                     <span className="text-white/80 font-medium">{s.type}</span>
                     {s.eventDate && ` · ${s.eventDate}`}
                     {s.strength && ` · Styrka ${s.strength.toLowerCase()}`}

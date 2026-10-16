@@ -23,6 +23,15 @@ const UpdateCompanySchema = z.object({
   gapAmbition: z.number().int().min(1).max(3).nullable().optional(),
   gapDrive: z.number().int().min(1).max(3).nullable().optional(),
   gapRationale: z.string().nullable().optional(),
+  fiscalYear: z.number().int().nullable().optional(),
+  revenueMsek: z.number().finite().nullable().optional(),
+  operatingProfitMsek: z.number().finite().nullable().optional(),
+  operatingProfitPrevMsek: z.number().finite().nullable().optional(),
+  operatingMarginPct: z.number().finite().nullable().optional(),
+  equityRatioPct: z.number().finite().nullable().optional(),
+  quickRatioPct: z.number().finite().nullable().optional(),
+  managers: z.number().int().nonnegative().nullable().optional(),
+  distanceKm: z.number().int().nonnegative().nullable().optional(),
 })
 
 

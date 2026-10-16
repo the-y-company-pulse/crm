@@ -7,13 +7,15 @@ import { useIsMobile } from "@/hooks/useMediaQuery"
 import { ownerBg, ownerText } from "@/lib/ownerColor"
 import {
   RADAR_REGIONS,
-  RADAR_SIGNAL_TYPES,
   RADAR_STATUSES,
   RADAR_STRENGTHS,
   RADAR_TARGET_REGIONS,
+  RADARS,
   STRENGTH_RANK,
+  type RadarKey,
   type RadarStatus,
 } from "@/lib/radar-constants"
+import { FIT_RULES, evaluateFit, fitScore, type FitCriterion, type FitState } from "@/lib/radar-fit"
 import type { User } from "@/lib/types"
 import NewSignalModal from "./NewSignalModal"
 
@@ -25,6 +27,7 @@ type RadarContact = {
   phone: string | null
   sourceUrl: string | null
   notes: string | null
+  _count?: { participants: number }
 }
 
 export type RadarSignal = {
@@ -57,19 +60,29 @@ export type RadarSignal = {
     owner: User | null
     gapAmbition: number | null
     gapDrive: number | null
+    fiscalYear: number | null
+    revenueMsek: number | null
+    operatingProfitMsek: number | null
+    operatingProfitPrevMsek: number | null
+    operatingMarginPct: number | null
+    equityRatioPct: number | null
+    quickRatioPct: number | null
+    managers: number | null
+    distanceKm: number | null
     contacts: RadarContact[]
     deals: { id: string; status: string }[]
   }
 }
 
 type Props = {
+  radar: RadarKey
   signals: RadarSignal[]
   users: User[]
   failed: { id: string; bolag: string; processError: string | null }[]
   currentUserId: string
 }
 
-type SortKey = "added" | "event" | "strength" | "company"
+type SortKey = "added" | "event" | "strength" | "company" | "fit"
 
 const STATUS_STYLE: Record<RadarStatus, string> = {
   "Ny": "bg-neon/15 text-neon border-neon/40",
@@ -97,7 +110,19 @@ function isGapTopProspect(s: RadarSignal) {
   return s.company.gapAmbition === 3 && s.company.gapDrive === 1
 }
 
-export default function RadarBoard({ signals: initial, users, failed, currentUserId }: Props) {
+function pastParticipants(s: RadarSignal) {
+  return s.company.contacts.reduce((n, c) => n + (c._count?.participants ?? 0), 0)
+}
+
+const FIT_STYLE: Record<FitState, string> = {
+  ok: "bg-[rgb(var(--c-won)/0.14)] text-[rgb(var(--c-won))] border-[rgb(var(--c-won)/0.35)]",
+  no: "bg-[rgb(var(--c-lost)/0.10)] text-[rgb(var(--c-lost))] border-[rgb(var(--c-lost)/0.30)]",
+  unknown: "bg-transparent text-white/40 border-white/15 border-dashed",
+}
+const FIT_MARK: Record<FitState, string> = { ok: "✓", no: "✕", unknown: "?" }
+
+export default function RadarBoard({ radar, signals: initial, users, failed, currentUserId }: Props) {
+  const isLeadership = radar === "ledarskap"
   const isMobile = useIsMobile()
   const router = useRouter()
   const [signals, setSignals] = useState(initial)
@@ -107,7 +132,9 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
   const [strength, setStrength] = useState("")
   const [status, setStatus] = useState("active")
   const [owner, setOwner] = useState("")
-  const [sort, setSort] = useState<SortKey>("added")
+  const [sort, setSort] = useState<SortKey>(isLeadership ? "fit" : "added")
+  const [radiusKm, setRadiusKm] = useState(FIT_RULES.defaultRadiusKm) // 0 = any distance
+  const [fitFilter, setFitFilter] = useState<"" | "full" | "nomiss">("")
   const [expanded, setExpanded] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
@@ -117,13 +144,32 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
   // Pick up fresh server data after router.refresh()
   useEffect(() => setSignals(initial), [initial])
 
+  const fitById = useMemo(() => {
+    const m = new Map<string, FitCriterion[]>()
+    if (isLeadership) for (const s of signals) m.set(s.id, evaluateFit(s.company, radiusKm || 1000))
+    return m
+  }, [signals, radiusKm, isLeadership])
+
+  // In scope: target regions (kultur) or not known to be outside the radius (ledarskap)
+  const inScope = (s: RadarSignal) =>
+    isLeadership
+      ? !radiusKm || fitById.get(s.id)?.find((c) => c.key === "near")?.state !== "no"
+      : RADAR_TARGET_REGIONS.includes(s.company.region ?? "Okänd")
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     const list = signals.filter((s) => {
       if (type && s.type !== type) return false
-      const r = s.company.region ?? "Okänd"
-      if (region === "target" && !RADAR_TARGET_REGIONS.includes(r)) return false
-      if (region && region !== "target" && r !== region) return false
+      if (isLeadership) {
+        if (!inScope(s)) return false
+        const fit = fitById.get(s.id) ?? []
+        if (fitFilter === "full" && !fit.every((c) => c.state === "ok")) return false
+        if (fitFilter === "nomiss" && fit.some((c) => c.state === "no")) return false
+      } else {
+        const r = s.company.region ?? "Okänd"
+        if (region === "target" && !RADAR_TARGET_REGIONS.includes(r)) return false
+        if (region && region !== "target" && r !== region) return false
+      }
       if (strength && s.strength !== strength) return false
       if (status === "active" && s.status === "Ej relevant") return false
       if (status && status !== "active" && s.status !== status) return false
@@ -157,13 +203,15 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
           return byStrength(a, b) || b.createdAt.localeCompare(a.createdAt)
         case "company":
           return a.company.name.localeCompare(b.company.name, "sv")
+        case "fit":
+          return fitScore(fitById.get(b.id) ?? []) - fitScore(fitById.get(a.id) ?? []) || byAdded(a, b)
         default:
           return byAdded(a, b)
       }
     })
-  }, [signals, search, type, region, strength, status, owner, sort])
+  }, [signals, search, type, region, strength, status, owner, sort, fitById, fitFilter, radiusKm])
 
-  const inTarget = signals.filter((s) => RADAR_TARGET_REGIONS.includes(s.company.region ?? "Okänd"))
+  const inTarget = signals.filter(inScope)
   const outsideCount = signals.length - inTarget.length
   const newCount = inTarget.filter((s) => s.status === "Ny").length
   const companyCount = new Set(inTarget.map((s) => s.company.id)).size
@@ -261,15 +309,33 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
           </button>
         )}
       </div>
-      <FilterSelect value={type} onChange={setType} label="Alla signaltyper" options={RADAR_SIGNAL_TYPES} />
-      <select className="input w-auto py-2.5 text-sm" value={region} onChange={(e) => setRegion(e.target.value)}>
-        <option value="target">Målområdet (VG, Halland, Jönköping)</option>
-        <option value="">Alla regioner</option>
-        {RADAR_REGIONS.map((r) => (
-          <option key={r} value={r}>{r}</option>
-        ))}
-      </select>
-      <FilterSelect value={strength} onChange={setStrength} label="Alla styrkor" options={RADAR_STRENGTHS} />
+      <FilterSelect value={type} onChange={setType} label="Alla signaltyper" options={RADARS[radar].types} />
+      {isLeadership ? (
+        <>
+          <select className="input w-auto py-2.5 text-sm" value={radiusKm} onChange={(e) => setRadiusKm(Number(e.target.value))}>
+            <option value={50}>Inom 5 mil</option>
+            <option value={75}>Inom 7,5 mil</option>
+            <option value={100}>Inom 10 mil</option>
+            <option value={0}>Alla avstånd</option>
+          </select>
+          <select className="input w-auto py-2.5 text-sm" value={fitFilter} onChange={(e) => setFitFilter(e.target.value as typeof fitFilter)}>
+            <option value="">All matchning</option>
+            <option value="nomiss">Inga kända missar</option>
+            <option value="full">Full matchning</option>
+          </select>
+        </>
+      ) : (
+        <>
+          <select className="input w-auto py-2.5 text-sm" value={region} onChange={(e) => setRegion(e.target.value)}>
+            <option value="target">Målområdet (VG, Halland, Jönköping)</option>
+            <option value="">Alla regioner</option>
+            {RADAR_REGIONS.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+          <FilterSelect value={strength} onChange={setStrength} label="Alla styrkor" options={RADAR_STRENGTHS} />
+        </>
+      )}
       <select className="input w-auto py-2.5 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
         <option value="active">Aktiva (ej "Ej relevant")</option>
         <option value="">Alla statusar</option>
@@ -285,6 +351,7 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
         ))}
       </select>
       <select className="input w-auto py-2.5 text-sm" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+        {isLeadership && <option value="fit">Bäst matchning</option>}
         <option value="added">Senast tillagd</option>
         <option value="event">Händelsedatum</option>
         <option value="strength">Styrka</option>
@@ -296,9 +363,22 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
   const header = (
     <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
       <div>
-        <h1 className="font-display text-2xl md:text-3xl text-white mb-2">Kulturradarn</h1>
+        <div className="flex gap-1 mb-3 p-1 bg-white/[0.03] border border-white/[0.08] rounded-lg w-fit">
+          {(Object.keys(RADARS) as RadarKey[]).map((k) => (
+            <Link
+              key={k}
+              href={`/radar?radar=${k}`}
+              className={`px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-colors ${
+                k === radar ? "bg-white/[0.10] text-white" : "text-white/50 hover:text-white/80"
+              }`}
+            >
+              {RADARS[k].label}
+            </Link>
+          ))}
+        </div>
+        <h1 className="font-display text-2xl md:text-3xl text-white mb-2">{RADARS[radar].label}</h1>
         <div className="text-white/40 text-xs md:text-sm">
-          {inTarget.length} signaler i målområdet · {companyCount} bolag · <span className="text-neon">{newCount} nya</span>
+          {inTarget.length} signaler {isLeadership ? (radiusKm ? `inom ${radiusKm / 10} mil` : "") : "i målområdet"} · {companyCount} bolag · <span className="text-neon">{newCount} nya</span>
           {outsideCount > 0 && <> · {outsideCount} utanför</>}
           {filtered.length !== inTarget.length && <> · visar {filtered.length}</>}
         </div>
@@ -316,6 +396,7 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
 
   const modal = showNew && (
     <NewSignalModal
+      radar={radar}
       onClose={() => setShowNew(false)}
       onCreated={(result) => {
         setShowNew(false)
@@ -376,12 +457,13 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
                         {[s.company.city, s.company.industry].filter(Boolean).join(" · ")}
                       </div>
                     </div>
-                    <StrengthLabel strength={s.strength} />
+                    {!isLeadership && <StrengthLabel strength={s.strength} />}
                   </div>
+                  {isLeadership && <FitChips fit={fitById.get(s.id) ?? []} className="mb-2" />}
                   <div className="text-xs text-white/50 mb-2">{s.type}{s.eventDate && ` · ${s.eventDate}`}</div>
                   <p className={`text-sm text-white/80 ${expanded === s.id ? "" : "line-clamp-2"}`}>{s.summary}</p>
                 </button>
-                {expanded === s.id && <SignalDetails s={s} />}
+                {expanded === s.id && <SignalDetails s={s} fit={fitById.get(s.id)} />}
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <StatusSelect value={s.status} onChange={(v) => updateStatus(s, v)} />
                   <OwnerSelect s={s} users={users} onChange={(v) => updateOwner(s, v)} />
@@ -408,7 +490,7 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
             <tr>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Bolag</th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Signal</th>
-              <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Styrka</th>
+              <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">{isLeadership ? "Profil" : "Styrka"}</th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Ansvarig</th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Status</th>
               <th className="px-5 py-4 text-left text-sm font-semibold text-white/70">Pipeline</th>
@@ -422,6 +504,7 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
                 <RadarRow
                   key={s.id}
                   s={s}
+                  fit={isLeadership ? fitById.get(s.id) ?? [] : null}
                   users={users}
                   expanded={expanded === s.id}
                   busy={busy === s.id}
@@ -440,9 +523,10 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
 }
 
 function RadarRow({
-  s, users, expanded, busy, onToggle, onStatus, onOwner, onCreateDeal,
+  s, fit, users, expanded, busy, onToggle, onStatus, onOwner, onCreateDeal,
 }: {
   s: RadarSignal
+  fit: FitCriterion[] | null
   users: User[]
   expanded: boolean
   busy: boolean
@@ -472,6 +556,11 @@ function RadarRow({
               Glapp
             </span>
           )}
+          {pastParticipants(s) > 0 && (
+            <span className="ml-2 text-[10px] uppercase tracking-wider text-[rgb(var(--c-won))] border border-[rgb(var(--c-won)/0.4)] rounded px-1.5 py-0.5" title="Har skickat deltagare till tidigare program">
+              Tidigare deltagare
+            </span>
+          )}
           <div className="text-xs text-white/40 mt-0.5">
             {[s.company.city, s.company.industry].filter(Boolean).join(" · ")}
           </div>
@@ -482,7 +571,9 @@ function RadarRow({
           </div>
           <p className={`text-sm text-white/85 ${expanded ? "" : "line-clamp-2"}`}>{s.summary}</p>
         </td>
-        <td className="px-5 py-4"><StrengthLabel strength={s.strength} /></td>
+        <td className="px-5 py-4">
+          {fit ? <FitChips fit={fit} /> : <StrengthLabel strength={s.strength} />}
+        </td>
         <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
           <OwnerSelect s={s} users={users} onChange={onOwner} />
         </td>
@@ -496,7 +587,7 @@ function RadarRow({
       {expanded && (
         <tr className="border-b border-white/[0.05] bg-white/[0.015]">
           <td colSpan={6} className="px-5 pb-5">
-            <SignalDetails s={s} />
+            <SignalDetails s={s} fit={fit ?? undefined} />
           </td>
         </tr>
       )}
@@ -504,12 +595,20 @@ function RadarRow({
   )
 }
 
-function SignalDetails({ s }: { s: RadarSignal }) {
+function SignalDetails({ s, fit }: { s: RadarSignal; fit?: FitCriterion[] }) {
   const c = radarContact(s)
   const c2 = s.company
+  const participants = pastParticipants(s)
   return (
     <div className="grid md:grid-cols-2 gap-4 md:gap-8 pt-3 text-sm">
       <div className="space-y-2">
+        {fit?.map((f) => (
+          <Detail key={f.key} label={`${FIT_MARK[f.state]} ${f.label}`} value={f.detail} />
+        ))}
+        {fit && c2.revenueMsek != null && (
+          <Detail label="Omsättning" value={`${c2.revenueMsek.toLocaleString("sv-SE")} MSEK${c2.fiscalYear ? ` (${c2.fiscalYear})` : ""}`} />
+        )}
+        {participants > 0 && <Detail label="Tidigare" value={`${participants} deltagare i tidigare program`} />}
         {s.angle && <Detail label="Vinkel" value={s.angle} />}
         <Detail
           label="Källa"
@@ -572,6 +671,22 @@ function Detail({ label, value, href, internal }: { label: string; value: string
       ) : (
         <span className="text-white/85 whitespace-pre-wrap break-words min-w-0">{value}</span>
       )}
+    </div>
+  )
+}
+
+function FitChips({ fit, className = "" }: { fit: FitCriterion[]; className?: string }) {
+  return (
+    <div className={`flex flex-wrap gap-1 ${className}`}>
+      {fit.map((f) => (
+        <span
+          key={f.key}
+          title={f.detail}
+          className={`text-[11px] font-medium rounded border px-1.5 py-0.5 whitespace-nowrap ${FIT_STYLE[f.state]}`}
+        >
+          {FIT_MARK[f.state]} {f.label}
+        </span>
+      ))}
     </div>
   )
 }

@@ -1,11 +1,12 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { RADAR_REGIONS, RADAR_SIGNAL_TYPES, RADAR_STRENGTHS } from "@/lib/radar-constants"
+import { RADAR_REGIONS, RADAR_STRENGTHS, RADARS, type RadarKey } from "@/lib/radar-constants"
 
 type Row = Record<string, string>
 
 type Props = {
+  radar: RadarKey
   onClose: () => void
   onCreated: (result: { processed: number; failed: { bolag: string; error: string }[] }) => void
 }
@@ -33,6 +34,44 @@ const HEADER_ALIASES: Record<string, string> = {
   epostmonster: "epostMonster",
   kontaktkalla: "kontaktKalla",
   kontaktkommentar: "kontaktKommentar", kommentar: "kontaktKommentar",
+  bokslutsar: "bokslutsar", ar: "bokslutsar",
+  omsattning: "omsattningMsek", omsattningmsek: "omsattningMsek", oms: "omsattningMsek",
+  rorelseresultat: "rorelseresultatMsek", resultat: "rorelseresultatMsek", rorelseresultatmsek: "rorelseresultatMsek",
+  rorelseresultatfg: "rorelseresultatFgMsek", resultatfg: "rorelseresultatFgMsek", foregaenderesultat: "rorelseresultatFgMsek",
+  rorelsemarginal: "rorelsemarginal", marginal: "rorelsemarginal",
+  soliditet: "soliditet",
+  kassalikviditet: "kassalikviditet",
+  chefer: "antalChefer", antalchefer: "antalChefer", ledare: "antalChefer",
+  avstand: "avstandKm", avstandkm: "avstandKm",
+}
+
+// Numeric inbox fields and how to read Swedish-formatted numbers ("12,5", "1 234", "18 %")
+const INT_FIELDS = ["bokslutsar", "antalChefer", "avstandKm"]
+const FLOAT_FIELDS = [
+  "omsattningMsek", "rorelseresultatMsek", "rorelseresultatFgMsek",
+  "rorelsemarginal", "soliditet", "kassalikviditet",
+]
+
+const NUMBER_LABELS: Record<string, string> = {
+  bokslutsar: "Bokslutsår", antalChefer: "Chefer", avstandKm: "Avstånd",
+  omsattningMsek: "Omsättning", rorelseresultatMsek: "Rörelseresultat", rorelseresultatFgMsek: "Resultat fg",
+  rorelsemarginal: "Marginal", soliditet: "Soliditet", kassalikviditet: "Kassalikviditet",
+}
+
+function toNumber(v: string) {
+  const n = Number(v.replace(/\s|%|msek|mkr/gi, "").replace(/−/g, "-").replace(",", "."))
+  return Number.isFinite(n) ? n : null
+}
+
+function toPayload(r: Row, radar: RadarKey) {
+  const out: Record<string, string | number | null> = { radar }
+  for (const [k, v] of Object.entries(r)) {
+    if (!v?.trim()) continue
+    if (INT_FIELDS.includes(k)) out[k] = toNumber(v) != null ? Math.round(toNumber(v)!) : null
+    else if (FLOAT_FIELDS.includes(k)) out[k] = toNumber(v)
+    else out[k] = v
+  }
+  return out
 }
 
 function headerKey(h: string) {
@@ -61,22 +100,26 @@ function parsePaste(text: string): { rows: Row[]; unknown: string[] } {
   return { rows, unknown }
 }
 
-function rowError(r: Row) {
+function rowError(r: Row, radar: RadarKey) {
   if (!r.bolag) return "Bolag saknas"
   if (!r.typ) return "Signaltyp saknas"
-  if (!(RADAR_SIGNAL_TYPES as readonly string[]).includes(r.typ)) return `Okänd signaltyp "${r.typ}"`
+  if (!RADARS[radar].types.includes(r.typ)) return `Okänd signaltyp "${r.typ}"`
   if (!r.signal) return "Signaltext saknas"
+  for (const k of [...INT_FIELDS, ...FLOAT_FIELDS]) {
+    if (r[k]?.trim() && toNumber(r[k]) == null) return `Ogiltigt tal i ${NUMBER_LABELS[k]}: "${r[k]}"`
+  }
   return null
 }
 
-const EMPTY: Row = { typ: "Kraftig tillväxt", region: "Västra Götaland" }
-
-export default function NewSignalModal({ onClose, onCreated }: Props) {
+export default function NewSignalModal({ radar, onClose, onCreated }: Props) {
+  const isLeadership = radar === "ledarskap"
+  const types = RADARS[radar].types
+  const EMPTY: Row = { typ: isLeadership ? "Passar profilen" : "Kraftig tillväxt", region: "Västra Götaland" }
   const [mode, setMode] = useState<"single" | "paste">("single")
   const [form, setForm] = useState<Row>(EMPTY)
   const [showContact, setShowContact] = useState(false)
   const [paste, setPaste] = useState("")
-  const [defaults, setDefaults] = useState<Row>({ typ: "Kraftig tillväxt", kalla: "", region: "" })
+  const [defaults, setDefaults] = useState<Row>({ typ: EMPTY.typ, kalla: "", region: "" })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -91,7 +134,7 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
       }),
     [parsed, defaults]
   )
-  const pasteErrors = pasteRows.map(rowError)
+  const pasteErrors = pasteRows.map((r) => rowError(r, radar))
   const validPasteRows = pasteRows.filter((_, i) => !pasteErrors[i])
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -105,7 +148,7 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
       const res = await fetch("/api/radar/inbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows }),
+        body: JSON.stringify({ rows: rows.map((r) => toPayload(r, radar)) }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -118,7 +161,7 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
     }
   }
 
-  const singleError = rowError(form)
+  const singleError = rowError(form, radar)
 
   return (
     <>
@@ -126,7 +169,7 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 pointer-events-none">
         <div className="bg-ink-900 border-0 md:border md:border-white/[0.10] rounded-none md:rounded-xl shadow-2xl w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl p-4 md:p-6 overflow-y-auto pointer-events-auto">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg md:text-xl text-white">Lägg till signal</h2>
+            <h2 className="font-display text-lg md:text-xl text-white">Lägg till i {RADARS[radar].label}</h2>
             <button onClick={onClose} className="text-white/40 hover:text-white text-3xl leading-none px-2" aria-label="Stäng">
               ×
             </button>
@@ -156,7 +199,7 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Signaltyp *">
                   <select className="input" value={form.typ ?? ""} onChange={set("typ")}>
-                    {RADAR_SIGNAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {types.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </Field>
                 <Field label="Styrka">
@@ -166,8 +209,13 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
                   </select>
                 </Field>
               </div>
-              <Field label="Vad har hänt? *">
-                <textarea className="input min-h-[80px] text-sm" value={form.signal ?? ""} onChange={set("signal")} placeholder="1–2 meningar, t.ex. 'Gasell 2026, +240 % på tre år.'" />
+              <Field label={isLeadership ? "Varför passar de? *" : "Vad har hänt? *"}>
+                <textarea
+                  className="input min-h-[80px] text-sm"
+                  value={form.signal ?? ""}
+                  onChange={set("signal")}
+                  placeholder={isLeadership ? "Varför passar de? T.ex. 'Lönsamt familjeföretag, ca 15 chefer, växer.'" : "1–2 meningar, t.ex. 'Gasell 2026, +240 % på tre år.'"}
+                />
               </Field>
               <Field label="Vinkel">
                 <input className="input" value={form.vinkel ?? ""} onChange={set("vinkel")} placeholder="Förslag på ingång" />
@@ -186,6 +234,23 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
                 <Field label="Bransch"><input className="input" value={form.bransch ?? ""} onChange={set("bransch")} /></Field>
                 <Field label="Anställda"><input className="input" value={form.anstallda ?? ""} onChange={set("anstallda")} placeholder="t.ex. 120" /></Field>
               </div>
+
+              {isLeadership && (
+                <>
+                  <div className="text-[11px] uppercase tracking-wider text-white/40 mt-2">Ekonomi (senaste årsredovisningen)</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Field label="Bokslutsår"><input className="input" value={form.bokslutsar ?? ""} onChange={set("bokslutsar")} placeholder="2025" /></Field>
+                    <Field label="Omsättning MSEK"><input className="input" value={form.omsattningMsek ?? ""} onChange={set("omsattningMsek")} /></Field>
+                    <Field label="Rörelseres. MSEK"><input className="input" value={form.rorelseresultatMsek ?? ""} onChange={set("rorelseresultatMsek")} /></Field>
+                    <Field label="Föreg. år MSEK"><input className="input" value={form.rorelseresultatFgMsek ?? ""} onChange={set("rorelseresultatFgMsek")} /></Field>
+                    <Field label="Soliditet %"><input className="input" value={form.soliditet ?? ""} onChange={set("soliditet")} /></Field>
+                    <Field label="Kassalikv. %"><input className="input" value={form.kassalikviditet ?? ""} onChange={set("kassalikviditet")} /></Field>
+                    <Field label="Antal chefer"><input className="input" value={form.antalChefer ?? ""} onChange={set("antalChefer")} /></Field>
+                    <Field label="Avstånd km"><input className="input" value={form.avstandKm ?? ""} onChange={set("avstandKm")} placeholder="räknas ut" /></Field>
+                  </div>
+                  <p className="text-[11px] text-white/35 -mt-1">Ekonomin sparas bara om bokslutsår är ifyllt. Avståndet räknas ut från orten om det lämnas tomt.</p>
+                </>
+              )}
 
               <button onClick={() => setShowContact(!showContact)} className="text-sm text-neon hover:underline self-start mt-1">
                 {showContact ? "− Dölj kontaktperson" : "+ Lägg till kontaktperson"}
@@ -213,7 +278,8 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
             <div className="flex flex-col gap-3">
               <p className="text-sm text-white/60">
                 Klistra in från Excel eller Google Sheets med rubrikrad. Kolumner som känns igen:
-                <span className="text-white/80"> Bolag, Typ, Signal, Org.nr, Ort, Region, Bransch, Anställda, Datum, Källa, Länk, Styrka, Vinkel, Kontakt, Roll, Telefon, Växel, E-post</span>.
+                <span className="text-white/80"> Bolag, Typ, Signal, Org.nr, Ort, Region, Bransch, Anställda, Datum, Källa, Länk, Styrka, Vinkel, Kontakt, Roll, Telefon, Växel, E-post</span>
+                {isLeadership && <span className="text-white/80">, Bokslutsår, Omsättning, Rörelseresultat, Resultat fg, Marginal, Soliditet, Kassalikviditet, Chefer</span>}.
                 Bolag och Signal krävs.
               </p>
               <textarea
@@ -226,7 +292,7 @@ export default function NewSignalModal({ onClose, onCreated }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <Field label="Typ om kolumn saknas">
                   <select className="input" value={defaults.typ} onChange={(e) => setDefaults({ ...defaults, typ: e.target.value })}>
-                    {RADAR_SIGNAL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    {types.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </Field>
                 <Field label="Källa om kolumn saknas">
