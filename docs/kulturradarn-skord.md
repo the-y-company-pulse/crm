@@ -25,12 +25,44 @@ Ersätter tidigare upplägget med "Västra Götaland först, i andra hand övrig
 
 Gränsfall: ett bolag med huvudkontor utanför området men ett större kontor inom det tas med, med kontorsorten i `ort` och en kommentar i `vinkel`. Bolag utanför området som ändå hamnar i inkorgen döljs som standard i Radar-vyn.
 
+## Signaltyper
+
+| typ | Vad det betyder | Bästa läge att höra av sig | Källor |
+|---|---|---|---|
+| `Ny strategi / nya mål` | Ny tillväxtplan, nya finansiella mål (t.ex. "fördubbla till 2030"), ny affärsmodell eller nya marknader. **Kärnan i erbjudandet:** när målen ändras måste kulturen följa med | Direkt | VD-ord i årsredovisning, pressmeddelanden, VD-intervjuer. Sätt gärna `ambition` (1–3) |
+| `Tidigare kontakt på ny post` | Någon vi redan känner (se frågan nedan) har blivit VD, HR-chef eller ledningsgruppsmedlem på ett nytt bolag. **Varmaste ingången** | Inom 1–3 månader | Pressmeddelanden om utnämningar, Mynewsdesk, Cision, branschpress |
+| `Kulturskav i media` | Skav i ledningen, chefsavgångar, dålig arbetsmiljö, misslyckad omorganisation | Bevaka, ofta efter att det lagt sig | Media |
+| `Sammanslagning` | Fusion eller förvärv slutfört för 6–12 månader sedan, två kulturer ska integreras | 6–12 månader efter | Pressmeddelanden, MFN |
+| `Förvärvar bolag` | **Köparen** som integrerar flera bolag på kort tid (2+ förvärv på 18 månader). Oftast den som betalar | Efter andra förvärvet | Pressmeddelanden, MFN |
+| `Kraftig tillväxt` | Omsättning ungefär fördubblad på cirka 3 år, Gasell-listor | Direkt | Bolagens egna Gasell-inlägg, branschpress |
+| `Ny VD i ägarlett bolag` | Tidigare ägar- eller grundarlett bolag som rekryterat extern VD | 3–9 månader efter tillträdet | Pressmeddelanden |
+| `Generationsskifte` | Nästa generation tar över ett familjeföretag | 3–12 månader efter | Lokalpress, pressmeddelanden |
+| `Första HR-chef` | Bolaget rekryterar sin första HR- eller People & Culture-chef | När personen tillträtt | Platsannonser, utnämningar |
+| `Ny HR-/People-chef` | Ny HR-chef, även om rollen funnits tidigare. Nytillsatta startar egna initiativ under de första 100 dagarna | Inom de första 100 dagarna | Utnämningar, LinkedIn-nyheter från bolaget |
+| `Ny ägare / PE` | Ny huvudägare, private equity eller serieförvärvare | 3–9 månader efter | MFN, PE-bolagens nyheter |
+| `Nytt varumärke / namnbyte` | Nytt namn eller ny varumärkesplattform, t.ex. efter sammanslagning. Värderingarna behöver fyllas med innehåll | Direkt | Pressmeddelanden, branschpress |
+
+### Tidigare kontakter att bevaka
+
+Hämta namnen från CRM:et i början av varje körning och sök efter dem i utnämningsnyheter. Gör det bara för personer vi faktiskt haft en relation med. Spara aldrig privata uppgifter: bara den nya rollen och bolaget, enligt kontaktreglerna.
+
+```sql
+-- Deltagare i program och kontakter på vunna affärer
+select distinct ct."fullName", co.name as tidigare_bolag
+from contacts ct
+left join companies co on co.id = ct."companyId"
+where exists (select 1 from participants p where p."contactId" = ct.id)
+   or exists (select 1 from deals d where d."contactId" = ct.id and d.status = 'won');
+```
+
+Ange i `signal` vem personen är och vad relationen var, t.ex. "Anna Andersson (deltog i The Y Leadership Program HT-25) blir VD för Exempel AB."
+
 ## Tabell: `public.radar_inbox`
 
 | Kolumn | Typ | Obligatorisk | Innehåll |
 |---|---|---|---|
 | `bolag` | text | **ja** | Bolagsnamn |
-| `typ` | text | **ja** | Exakt en av: `Kulturskav i media`, `Sammanslagning`, `Kraftig tillväxt`, `Ny VD i ägarlett bolag`, `Generationsskifte`, `Första HR-chef`, `Ny ägare / PE` |
+| `typ` | text | **ja** | Exakt en av signaltyperna nedan |
 | `signal` | text | **ja** | 1–2 meningar om vad som hänt |
 | `slug` | text | | Bolagsnamnet som slug, t.ex. `xl-bygg-herrljunga` |
 | `orgnr` | text | | Organisationsnummer `XXXXXX-XXXX`. **Viktigaste fältet för dubblettskydd.** Ange det när det går att hitta i bolagets egna publiceringar eller i årsredovisningen |

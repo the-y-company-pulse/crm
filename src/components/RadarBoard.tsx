@@ -12,6 +12,7 @@ import {
   RADAR_TARGET_REGIONS,
   RADARS,
   STRENGTH_RANK,
+  WARM_SIGNAL_TYPES,
   type RadarKey,
   type RadarStatus,
 } from "@/lib/radar-constants"
@@ -383,14 +384,13 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
           {filtered.length !== inTarget.length && <> · visar {filtered.length}</>}
         </div>
       </div>
-      <div className="flex gap-2 self-start md:self-auto">
-        <button onClick={reprocess} disabled={processing} className="btn btn-secondary text-sm py-2">
-          {processing ? "Läser inkorg..." : "Läs in nya signaler"}
-        </button>
-        <button onClick={() => setShowNew(true)} className="btn btn-primary text-sm py-2">
-          + Lägg till signal
-        </button>
-      </div>
+      {/* Manual entry is occasional (e.g. DI:s Gasell-lista in November) — kept low-key */}
+      <button
+        onClick={() => setShowNew(true)}
+        className="text-sm text-white/50 hover:text-white self-start md:self-auto underline-offset-4 hover:underline"
+      >
+        + Lägg till manuellt
+      </button>
     </div>
   )
 
@@ -428,6 +428,9 @@ export default function RadarBoard({ radar, signals: initial, users, failed, cur
           </li>
         ))}
       </ul>
+      <button onClick={reprocess} disabled={processing} className="btn btn-secondary text-xs py-1.5 px-3 mt-3">
+        {processing ? "Försöker..." : "Försök igen"}
+      </button>
     </div>
   )
 
@@ -556,7 +559,12 @@ function RadarRow({
               Glapp
             </span>
           )}
-          {pastParticipants(s) > 0 && (
+          {WARM_SIGNAL_TYPES.includes(s.type) && (
+            <span className="ml-2 text-[10px] uppercase tracking-wider text-neon border border-neon/40 rounded px-1.5 py-0.5" title="Någon vi redan känner, på ny post">
+              Varm kontakt
+            </span>
+          )}
+                    {pastParticipants(s) > 0 && (
             <span className="ml-2 text-[10px] uppercase tracking-wider text-[rgb(var(--c-won))] border border-[rgb(var(--c-won)/0.4)] rounded px-1.5 py-0.5" title="Har skickat deltagare till tidigare program">
               Tidigare deltagare
             </span>

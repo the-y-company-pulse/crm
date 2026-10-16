@@ -10,6 +10,8 @@ export const FIT_RULES = {
   minManagers: 10,
   maxManagers: 30,
   employeesPerManager: 9, // estimate when the number of managers isn't published
+  minEmployees: 80, // employee range used when the manager count is unknown
+  maxEmployees: 300,
   defaultRadiusKm: 100,
 }
 
@@ -76,7 +78,13 @@ export function evaluateFit(c: FitCompany, radiusKm = FIT_RULES.defaultRadiusKm)
 
   // 10–30 leaders
   const m = estimatedManagers(c)
-  const leaders: FitState = !m ? "unknown" : m.value >= r.minManagers && m.value <= r.maxManagers ? "ok" : "no"
+  // Published manager count is judged directly; otherwise the employee range
+  // that corresponds to 10–30 leaders (so the estimate's rounding doesn't decide)
+  const leaders: FitState = !m
+    ? "unknown"
+    : !m.estimated
+      ? m.value >= r.minManagers && m.value <= r.maxManagers ? "ok" : "no"
+      : c.employees! >= r.minEmployees && c.employees! <= r.maxEmployees ? "ok" : "no"
   const leaderDetail = !m
     ? "Antal chefer och anställda saknas"
     : m.estimated

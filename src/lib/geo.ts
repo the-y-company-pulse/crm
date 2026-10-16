@@ -46,6 +46,12 @@ const PLACES: Record<string, [number, number]> = {
   "gislaved": [57.304, 13.54], "gnosjö": [57.358, 13.737], "värnamo": [57.186, 14.04],
   "vaggeryd": [57.498, 14.147], "jönköping": [57.783, 14.161], "huskvarna": [57.786, 14.302],
   "habo": [57.907, 14.073], "mullsjö": [57.917, 13.88], "anderstorp": [57.28, 13.63],
+  // Smaller localities that show up in company addresses
+  "hisings backa": [57.75, 11.99], "ellös": [58.183, 11.47], "marstrand": [57.887, 11.585],
+  "bleket": [57.98, 11.57], "fagerfjäll": [58.03, 11.58], "sexdrega": [57.58, 13.13],
+  "ätran": [57.123, 12.94], "slöinge": [56.85, 12.69], "vessigebro": [56.98, 12.65],
+  "fjärås": [57.42, 12.15], "kungsbacka fjärås": [57.42, 12.15], "sisjön": [57.635, 11.95],
+  "jonsered": [57.75, 12.17], "billdal": [57.57, 11.95],
 }
 
 function haversineKm([lat1, lon1]: [number, number], [lat2, lon2]: [number, number]) {
@@ -59,10 +65,11 @@ function haversineKm([lat1, lon1]: [number, number], [lat2, lon2]: [number, numb
 // "Lilla Edet/Trollhättan", "Göteborg m.fl.", "Borlänge / Göteborg" → nearest known place
 export function distanceFromGoteborgKm(city: string | null | undefined): number | null {
   if (!city) return null
+  // "Ellös (Orust)" → try both "Ellös" and "Orust"
   const parts = city
     .toLowerCase()
-    .replace(/m\.fl\.?|kommun|\(.*?\)/g, " ")
-    .split(/[/,;&+]| och /)
+    .replace(/m\.fl\.?|kommun/g, " ")
+    .split(/[/,;&+()]| och /)
     .map((p) => p.trim())
     .filter(Boolean)
   let best: number | null = null

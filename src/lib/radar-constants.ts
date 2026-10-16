@@ -1,13 +1,21 @@
 // Kulturradarn value lists — client-safe (no Prisma import)
 export const RADAR_SIGNAL_TYPES = [
+  "Ny strategi / nya mål",
+  "Tidigare kontakt på ny post",
   "Kulturskav i media",
   "Sammanslagning",
+  "Förvärvar bolag",
   "Kraftig tillväxt",
   "Ny VD i ägarlett bolag",
   "Generationsskifte",
   "Första HR-chef",
+  "Ny HR-/People-chef",
   "Ny ägare / PE",
+  "Nytt varumärke / namnbyte",
 ] as const
+
+// A person we already know (past participant or customer contact) in a new role — the warmest way in
+export const WARM_SIGNAL_TYPES: readonly string[] = ["Tidigare kontakt på ny post"]
 
 export const RADAR_STATUSES = ["Ny", "Bevaka", "Kontaktad", "Ej relevant"] as const
 export const RADAR_STRENGTHS = ["Hög", "Medel", "Låg"] as const
