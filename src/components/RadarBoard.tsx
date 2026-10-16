@@ -10,6 +10,7 @@ import {
   RADAR_SIGNAL_TYPES,
   RADAR_STATUSES,
   RADAR_STRENGTHS,
+  RADAR_TARGET_REGIONS,
   STRENGTH_RANK,
   type RadarStatus,
 } from "@/lib/radar-constants"
@@ -102,7 +103,7 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
   const [signals, setSignals] = useState(initial)
   const [search, setSearch] = useState("")
   const [type, setType] = useState("")
-  const [region, setRegion] = useState("")
+  const [region, setRegion] = useState("target")
   const [strength, setStrength] = useState("")
   const [status, setStatus] = useState("active")
   const [owner, setOwner] = useState("")
@@ -120,7 +121,9 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
     const q = search.trim().toLowerCase()
     const list = signals.filter((s) => {
       if (type && s.type !== type) return false
-      if (region && (s.company.region ?? "Okänd") !== region) return false
+      const r = s.company.region ?? "Okänd"
+      if (region === "target" && !RADAR_TARGET_REGIONS.includes(r)) return false
+      if (region && region !== "target" && r !== region) return false
       if (strength && s.strength !== strength) return false
       if (status === "active" && s.status === "Ej relevant") return false
       if (status && status !== "active" && s.status !== status) return false
@@ -160,8 +163,10 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
     })
   }, [signals, search, type, region, strength, status, owner, sort])
 
-  const newCount = signals.filter((s) => s.status === "Ny").length
-  const companyCount = new Set(signals.map((s) => s.company.id)).size
+  const inTarget = signals.filter((s) => RADAR_TARGET_REGIONS.includes(s.company.region ?? "Okänd"))
+  const outsideCount = signals.length - inTarget.length
+  const newCount = inTarget.filter((s) => s.status === "Ny").length
+  const companyCount = new Set(inTarget.map((s) => s.company.id)).size
 
   async function updateStatus(s: RadarSignal, next: RadarStatus) {
     const prev = s.status
@@ -257,7 +262,13 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
         )}
       </div>
       <FilterSelect value={type} onChange={setType} label="Alla signaltyper" options={RADAR_SIGNAL_TYPES} />
-      <FilterSelect value={region} onChange={setRegion} label="Alla regioner" options={RADAR_REGIONS} />
+      <select className="input w-auto py-2.5 text-sm" value={region} onChange={(e) => setRegion(e.target.value)}>
+        <option value="target">Målområdet (VG, Halland, Jönköping)</option>
+        <option value="">Alla regioner</option>
+        {RADAR_REGIONS.map((r) => (
+          <option key={r} value={r}>{r}</option>
+        ))}
+      </select>
       <FilterSelect value={strength} onChange={setStrength} label="Alla styrkor" options={RADAR_STRENGTHS} />
       <select className="input w-auto py-2.5 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
         <option value="active">Aktiva (ej "Ej relevant")</option>
@@ -287,8 +298,9 @@ export default function RadarBoard({ signals: initial, users, failed, currentUse
       <div>
         <h1 className="font-display text-2xl md:text-3xl text-white mb-2">Kulturradarn</h1>
         <div className="text-white/40 text-xs md:text-sm">
-          {signals.length} signaler · {companyCount} bolag · <span className="text-neon">{newCount} nya</span>
-          {filtered.length !== signals.length && <> · visar {filtered.length}</>}
+          {inTarget.length} signaler i målområdet · {companyCount} bolag · <span className="text-neon">{newCount} nya</span>
+          {outsideCount > 0 && <> · {outsideCount} utanför</>}
+          {filtered.length !== inTarget.length && <> · visar {filtered.length}</>}
         </div>
       </div>
       <div className="flex gap-2 self-start md:self-auto">

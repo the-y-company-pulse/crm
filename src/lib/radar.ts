@@ -15,6 +15,7 @@ export {
   RADAR_STATUSES,
   RADAR_STRENGTHS,
   RADAR_REGIONS,
+  RADAR_TARGET_REGIONS,
   STRENGTH_RANK,
   type RadarStatus,
 } from "./radar-constants"

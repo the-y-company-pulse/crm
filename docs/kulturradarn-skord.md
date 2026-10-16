@@ -13,6 +13,18 @@ CRM:et läser inkorgen nästa gång någon öppnar Radar-vyn, eller när någon 
 - **En signal skapas** med status `Ny`.
 - **Samma händelse rapporterad igen** (samma bolag, signaltyp och käll-URL) uppdaterar bara signaltexten. Status ändras aldrig.
 
+## Geografisk avgränsning
+
+Sök **bara** efter bolag med huvudkontor eller tydlig verksamhet i:
+
+- **Västra Götaland**, inklusive Bohuslän, Göteborgsregionen, Sjuhärad, Skaraborg, Fyrbodal och Dalsland
+- **Halland**, t.ex. Kungsbacka, Varberg, Falkenberg, Halmstad och Laholm
+- **Jönköpings län**, t.ex. Jönköping, Huskvarna, Värnamo, Gislaved och Nässjö
+
+Ersätter tidigare upplägget med "Västra Götaland först, i andra hand övriga Sverige". Bolag i till exempel Stockholm, Skåne, Dalarna eller Norrland ska inte skördas.
+
+Gränsfall: ett bolag med huvudkontor utanför området men ett större kontor inom det tas med, med kontorsorten i `ort` och en kommentar i `vinkel`. Bolag utanför området som ändå hamnar i inkorgen döljs som standard i Radar-vyn.
+
 ## Tabell: `public.radar_inbox`
 
 | Kolumn | Typ | Obligatorisk | Innehåll |
@@ -23,7 +35,7 @@ CRM:et läser inkorgen nästa gång någon öppnar Radar-vyn, eller när någon 
 | `slug` | text | | Bolagsnamnet som slug, t.ex. `xl-bygg-herrljunga` |
 | `orgnr` | text | | Organisationsnummer `XXXXXX-XXXX`. **Viktigaste fältet för dubblettskydd.** Ange det när det går att hitta i bolagets egna publiceringar eller i årsredovisningen |
 | `ort`, `bransch` | text | | |
-| `region` | text | | `Västra Götaland` / `Övriga Sverige` / `Okänd` |
+| `region` | text | | `Västra Götaland` / `Halland` / `Jönköpings län` / `Övriga Sverige` / `Okänd`. Bohuslän räknas som `Västra Götaland` |
 | `anstallda` | text | | Siffra som text eller `okänt` |
 | `datum` | text | | `ÅÅÅÅ-MM` för händelsen |
 | `kalla`, `url` | text | | Källans namn och länk |
