@@ -13,6 +13,8 @@ Uppgiften skriver till samma inkorg med `radar = 'skraddarsytt'`. Föreslagen fr
 
 Ekonomi är inget krav, men den får gärna anges med samma kolumner som för Öppet program. Bolag under 30 ledare passar bättre i Öppet program.
 
+**Uteslut kommunalt ägda bolag** (t.ex. bostadsbolag, energibolag, kollektivtrafik och kommunalförbundens bolag som Gryning Vård). Det gäller även aktiebolag med 556-nummer. Kontrollera ägaren på bolagets webbplats eller i kommunens lista över kommunala bolag.
+
 ## Signaltyper
 
 | typ | När | Bästa läge |
